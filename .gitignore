@@ -1,0 +1,13 @@
+# Local tooling state (not project content)
+.claude/
+.harness-mem/
+CLAUDE.md
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
