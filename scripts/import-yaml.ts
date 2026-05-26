@@ -10,9 +10,40 @@
  *   2 = fatal error (file not found, DB error, etc)
  */
 
-const fs = require('fs');
-const path = require('path');
-const yaml = require('js-yaml');
+import fs from 'fs';
+import path from 'path';
+import yaml from 'js-yaml';
+
+// Type definitions
+interface Node {
+  id: string;
+  name: string;
+  aliases?: string[];
+  branch: string;
+  type: string;
+  era: string;
+  status: string;
+  descriptor: string;
+  anchors?: string[];
+}
+
+interface Edge {
+  source?: string;
+  source_id?: string;
+  target?: string;
+  target_id?: string;
+  type: string;
+  confidence?: number;
+  weight?: number;
+  source_ref?: string;
+  notes?: string;
+  note?: string;
+}
+
+interface YamlData {
+  nodes?: Node[];
+  edges?: Edge[];
+}
 
 // Schema constants (must match spec §2)
 const BRANCHES = new Set([
@@ -60,22 +91,25 @@ const EDGE_TYPES = new Set([
  * Includes location (file:line) and context
  */
 class ValidationError extends Error {
-  constructor(file, lineNumber, message, context = '') {
+  constructor(
+    public file: string,
+    public lineNumber: number,
+    message: string,
+    context: string = ''
+  ) {
     const location = `${file}:${lineNumber}`;
     const fullMessage = context
       ? `${location}: ${message} (${context})`
       : `${location}: ${message}`;
     super(fullMessage);
-    this.file = file;
-    this.lineNumber = lineNumber;
-    this.location = location;
+    this.name = 'ValidationError';
   }
 }
 
 /**
  * Validate node id is kebab-case
  */
-function validateId(id) {
+function validateId(id: string): boolean {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id);
 }
 
@@ -83,7 +117,7 @@ function validateId(id) {
  * Validate era format (year, decade, or range)
  * Supports: YYYY, YYYYs, YYYY-present, YYYYs-present, YYYY-YYYY, YYYYs-YYYYs, etc.
  */
-function validateEra(era) {
+function validateEra(era: string): boolean {
   return /^\d{4}s?(?:-(?:present|\d{4}s?))?$/.test(era);
 }
 
@@ -93,25 +127,27 @@ function validateEra(era) {
  * Note: Spec says "one technical sentence" but data has variations;
  * validation is lenient here, enforcement is at editorial review
  */
-function validateDescriptor(descriptor) {
+function validateDescriptor(descriptor: string): boolean {
   // Must be non-empty and at least 10 characters
-  return descriptor && descriptor.length >= 10 && descriptor.length <= 500;
+  return !!descriptor && descriptor.length >= 10 && descriptor.length <= 500;
 }
 
 /**
  * Load and parse YAML file
  */
-function loadYaml(filePath) {
+function loadYaml(filePath: string): YamlData {
   if (!fs.existsSync(filePath)) {
     throw new Error(`File not found: ${filePath}`);
   }
   try {
     const content = fs.readFileSync(filePath, 'utf8');
-    return yaml.load(content);
+    const data = yaml.load(content) as YamlData;
+    return data || {};
   } catch (error) {
-    if (error.mark) {
+    if (error instanceof Error && 'mark' in error) {
+      const mark = (error as any).mark;
       throw new Error(
-        `${filePath}:${error.mark.line + 1}: ${error.reason}`
+        `${filePath}:${mark.line + 1}: ${(error as any).reason}`
       );
     }
     throw error;
@@ -121,17 +157,20 @@ function loadYaml(filePath) {
 /**
  * Validate a single node against schema
  */
-function validateNode(node, nodeIndex, fileName = 'ai-nodes.yaml') {
-  const errors = [];
+function validateNode(
+  node: Node,
+  nodeIndex: number,
+  fileName: string = 'ai-nodes.yaml'
+): ValidationError[] {
+  const errors: ValidationError[] = [];
 
-  // Line number estimation (rough, since we don't track exact line numbers from js-yaml)
-  // In production, could use a YAML parser with position tracking
-  const lineNumber = 6 + (nodeIndex * 10); // Rough estimate
+  // Line number estimation
+  const lineNumber = 6 + nodeIndex * 10;
 
   // Check required fields
   const requiredFields = ['id', 'name', 'branch', 'type', 'era', 'status', 'descriptor'];
   for (const field of requiredFields) {
-    if (!node[field]) {
+    if (!(field in node) || !node[field as keyof Node]) {
       errors.push(
         new ValidationError(
           fileName,
@@ -208,7 +247,7 @@ function validateNode(node, nodeIndex, fileName = 'ai-nodes.yaml') {
       new ValidationError(
         fileName,
         lineNumber,
-        `descriptor must be a single sentence ending with period`,
+        `descriptor must be valid text (10-500 chars)`,
         `got "${node.descriptor.substring(0, 50)}..."`
       )
     );
@@ -243,9 +282,9 @@ function validateNode(node, nodeIndex, fileName = 'ai-nodes.yaml') {
 /**
  * Validate all nodes
  */
-function validateAllNodes(nodes) {
-  const errors = [];
-  const ids = new Set();
+function validateAllNodes(nodes: Node[]): ValidationError[] {
+  const errors: ValidationError[] = [];
+  const ids = new Set<string>();
 
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
@@ -260,7 +299,7 @@ function validateAllNodes(nodes) {
         errors.push(
           new ValidationError(
             'ai-nodes.yaml',
-            6 + (i * 10),
+            6 + i * 10,
             `duplicate node id "${node.id}"`
           )
         );
@@ -276,9 +315,14 @@ function validateAllNodes(nodes) {
  * Validate a single edge against schema
  * Note: ai-edges.yaml uses 'source'/'target' keys (not source_id/target_id)
  */
-function validateEdge(edge, edgeIndex, nodeIds, fileName = 'ai-edges.yaml') {
-  const errors = [];
-  const lineNumber = 3 + (edgeIndex * 5); // Rough estimate
+function validateEdge(
+  edge: Edge,
+  edgeIndex: number,
+  nodeIds: Set<string>,
+  fileName: string = 'ai-edges.yaml'
+): ValidationError[] {
+  const errors: ValidationError[] = [];
+  const lineNumber = 3 + edgeIndex * 5;
 
   // Map ai-edges.yaml field names (source/target) to spec names (source_id/target_id)
   const source = edge.source || edge.source_id;
@@ -329,7 +373,7 @@ function validateEdge(edge, edgeIndex, nodeIds, fileName = 'ai-edges.yaml') {
   }
 
   // Check referential integrity
-  if (!nodeIds.has(source)) {
+  if (source && !nodeIds.has(source)) {
     errors.push(
       new ValidationError(
         fileName,
@@ -339,7 +383,7 @@ function validateEdge(edge, edgeIndex, nodeIds, fileName = 'ai-edges.yaml') {
     );
   }
 
-  if (!nodeIds.has(target)) {
+  if (target && !nodeIds.has(target)) {
     errors.push(
       new ValidationError(
         fileName,
@@ -350,14 +394,15 @@ function validateEdge(edge, edgeIndex, nodeIds, fileName = 'ai-edges.yaml') {
   }
 
   // Validate weight if present (maps to confidence in spec)
-  if (edge.weight !== undefined && edge.weight !== null) {
-    if (typeof edge.weight !== 'number' || edge.weight < 0 || edge.weight > 1) {
+  const weight = edge.weight ?? edge.confidence;
+  if (weight !== undefined && weight !== null) {
+    if (typeof weight !== 'number' || weight < 0 || weight > 1) {
       errors.push(
         new ValidationError(
           fileName,
           lineNumber,
           `weight must be between 0.0 and 1.0`,
-          `got ${edge.weight}`
+          `got ${weight}`
         )
       );
     }
@@ -369,9 +414,9 @@ function validateEdge(edge, edgeIndex, nodeIds, fileName = 'ai-edges.yaml') {
 /**
  * Validate all edges
  */
-function validateAllEdges(edges, nodeIds) {
-  const errors = [];
-  const edgeSignatures = new Set();
+function validateAllEdges(edges: Edge[], nodeIds: Set<string>): ValidationError[] {
+  const errors: ValidationError[] = [];
+  const edgeSignatures = new Set<string>();
 
   for (let i = 0; i < edges.length; i++) {
     const edge = edges[i];
@@ -381,13 +426,15 @@ function validateAllEdges(edges, nodeIds) {
     errors.push(...edgeErrors);
 
     // Check for duplicate edges (same source, target, type)
-    if (edge.source_id && edge.target_id && edge.type) {
-      const signature = `${edge.source_id}→${edge.target_id}:${edge.type}`;
+    const source = edge.source || edge.source_id;
+    const target = edge.target || edge.target_id;
+    if (source && target && edge.type) {
+      const signature = `${source}→${target}:${edge.type}`;
       if (edgeSignatures.has(signature)) {
         errors.push(
           new ValidationError(
             'ai-edges.yaml',
-            3 + (i * 5),
+            3 + i * 5,
             `duplicate edge (${signature})`
           )
         );
@@ -402,9 +449,10 @@ function validateAllEdges(edges, nodeIds) {
 /**
  * Main import function
  */
-async function importYaml() {
+async function importYaml(): Promise<void> {
   try {
-    const projectRoot = path.resolve(__dirname, '..');
+    // Resolve to project root: dist/scripts/import-yaml.js -> up 3 levels to project root
+    const projectRoot = path.resolve(__dirname, '../../');
     const nodesFile = path.join(projectRoot, 'ai-nodes.yaml');
     const edgesFile = path.join(projectRoot, 'ai-edges.yaml');
 
@@ -426,7 +474,7 @@ async function importYaml() {
     const nodeIds = new Set(nodes.map(n => n.id));
 
     // Load edges if exists
-    let edges = [];
+    let edges: Edge[] = [];
     if (fs.existsSync(edgesFile)) {
       console.log('📂 Loading ai-edges.yaml...');
       const edgeData = loadYaml(edgesFile);
@@ -450,16 +498,10 @@ async function importYaml() {
     console.log(`  • ${edges.length} edges`);
     console.log('\n📝 TODO: Implement LadybugDB population (Task 1.4 continuation)');
 
-    // TODO: In Phase 1.4 completion:
-    // 1. Create/initialize LadybugDB database
-    // 2. Apply schema from schema/graph.cypher
-    // 3. Insert all nodes into Node table
-    // 4. Insert all edges into Edge table
-    // 5. Verify constraints are satisfied
-    // 6. Return success status
-
   } catch (error) {
-    console.error(`\n❌ Error: ${error.message}`);
+    console.error(
+      `\n❌ Error: ${error instanceof Error ? error.message : String(error)}`
+    );
     process.exit(2);
   }
 }
@@ -472,10 +514,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = {
-  importYaml,
-  validateNode,
-  validateAllNodes,
-  validateEdge,
-  validateAllEdges
-};
+export { importYaml, validateNode, validateAllNodes, validateEdge, validateAllEdges };
