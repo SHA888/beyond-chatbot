@@ -1,21 +1,26 @@
-const { strict: assert } = require('assert');
-const fs = require('fs');
-const path = require('path');
-const yaml = require('js-yaml');
+import { describe, it, expect } from 'vitest';
+import fs from 'fs';
+import path from 'path';
+import yaml from 'js-yaml';
+import { fileURLToPath } from 'url';
 
 /**
  * Unit tests for YAML → LadybugDB importer
  * Tests validation logic, error reporting, and data import correctness
  */
 
-describe('YAML Importer (scripts/import-yaml.js)', () => {
-  const importerPath = path.join(__dirname, '../scripts/import-yaml.js');
+describe('YAML Importer (scripts/import-yaml.ts)', () => {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const importerPath = path.join(__dirname, '../scripts/import-yaml.ts');
+  const compiledImporterPath = path.join(__dirname, '../dist/scripts/import-yaml.js');
 
   describe('Module existence and exports', () => {
-    it('should export a function', () => {
-      // Placeholder: actual importer must export a validation/import function
-      const scriptExists = fs.existsSync(importerPath);
-      assert(scriptExists, `Importer script must exist at ${importerPath}`);
+    it('should have importer source file', () => {
+      expect(fs.existsSync(importerPath)).toBe(true);
+    });
+
+    it('should compile to dist', () => {
+      expect(fs.existsSync(compiledImporterPath)).toBe(true);
     });
   });
 
@@ -32,7 +37,7 @@ describe('YAML Importer (scripts/import-yaml.js)', () => {
           anchors: []
         };
         // Validation must catch missing id
-        assert(!nodeWithoutId.id, 'Test setup: id should be missing');
+        expect(!('id' in nodeWithoutId)).toBe(true);
       });
 
       it('should require name field on all nodes', () => {
@@ -45,7 +50,7 @@ describe('YAML Importer (scripts/import-yaml.js)', () => {
           descriptor: 'A test node.',
           anchors: []
         };
-        assert(!nodeWithoutName.name, 'Test setup: name should be missing');
+        expect(!('name' in nodeWithoutName)).toBe(true);
       });
 
       it('should require branch field on all nodes', () => {
@@ -58,7 +63,7 @@ describe('YAML Importer (scripts/import-yaml.js)', () => {
           descriptor: 'A test node.',
           anchors: []
         };
-        assert(!nodeWithoutBranch.branch, 'Test setup: branch should be missing');
+        expect(!('branch' in nodeWithoutBranch)).toBe(true);
       });
 
       it('should require descriptor field on all nodes', () => {
@@ -71,7 +76,7 @@ describe('YAML Importer (scripts/import-yaml.js)', () => {
           status: 'active',
           anchors: []
         };
-        assert(!nodeWithoutDescriptor.descriptor, 'Test setup: descriptor should be missing');
+        expect(!('descriptor' in nodeWithoutDescriptor)).toBe(true);
       });
     });
 
@@ -84,17 +89,17 @@ describe('YAML Importer (scripts/import-yaml.js)', () => {
           'substrate-information-theory', 'substrate-signal-processing',
           'information-retrieval-recommenders', 'cross-cutting'
         ];
-        assert.equal(validBranches.length, 11, 'Should have exactly 11 branches');
+        expect(validBranches.length).toBe(11);
       });
 
       it('should validate type is one of 6 node type values', () => {
         const validTypes = ['algorithm', 'method', 'model-class', 'system', 'framework', 'math-construct'];
-        assert.equal(validTypes.length, 6, 'Should have exactly 6 node types');
+        expect(validTypes.length).toBe(6);
       });
 
       it('should validate status is one of 5 values', () => {
         const validStatuses = ['foundational', 'active', 'legacy', 'emerging', 'dormant'];
-        assert.equal(validStatuses.length, 5, 'Should have exactly 5 statuses');
+        expect(validStatuses.length).toBe(5);
       });
 
       it('should reject nodes with invalid branch', () => {
@@ -108,7 +113,7 @@ describe('YAML Importer (scripts/import-yaml.js)', () => {
           descriptor: 'Test.',
           anchors: []
         };
-        assert.equal(invalidNode.branch, 'invalid-branch', 'Test setup: invalid branch');
+        expect(invalidNode.branch).toBe('invalid-branch');
       });
 
       it('should reject nodes with invalid status', () => {
@@ -122,27 +127,22 @@ describe('YAML Importer (scripts/import-yaml.js)', () => {
           descriptor: 'Test.',
           anchors: []
         };
-        assert.equal(invalidNode.status, 'experimental', 'Test setup: invalid status');
+        expect(invalidNode.status).toBe('experimental');
       });
     });
 
     describe('Format constraints', () => {
       it('should validate id is kebab-case', () => {
         const validId = 'symbolic-gofai';
-        const invalidIds = ['symbolic_gofai', 'Symbolic-Gofai', 'symbolic gofai', 'symbolic--gofai'];
-        assert(validId.match(/^[a-z0-9]+(?:-[a-z0-9]+)*$/), 'Valid kebab-case should match pattern');
-      });
-
-      it('should validate descriptor is a single sentence (ends with period)', () => {
-        const validDescriptor = 'This is a single sentence.';
-        const invalidDescriptor = 'This is two sentences. And this is another.';
-        assert(validDescriptor.match(/\.$/), 'Valid descriptor should end with period');
+        const pattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+        expect(validId.match(pattern)).toBeTruthy();
       });
 
       it('should validate era format (year or decade)', () => {
         const validEras = ['1956', '1990s', '2010-present', '1956-present'];
+        const pattern = /^\d{4}s?(?:-(?:present|\d{4}s?))?$/;
         validEras.forEach(era => {
-          assert(era.match(/^\d{4}(?:s|-.*)?$/), `Era format should be valid: ${era}`);
+          expect(era.match(pattern)).toBeTruthy();
         });
       });
 
@@ -158,8 +158,8 @@ describe('YAML Importer (scripts/import-yaml.js)', () => {
           aliases: ['alias1', 'alias2'],
           anchors: ['anchor1']
         };
-        assert(Array.isArray(node.aliases), 'aliases should be array');
-        assert(Array.isArray(node.anchors), 'anchors should be array');
+        expect(Array.isArray(node.aliases)).toBe(true);
+        expect(Array.isArray(node.anchors)).toBe(true);
       });
     });
 
@@ -189,87 +189,80 @@ describe('YAML Importer (scripts/import-yaml.js)', () => {
         ];
         const ids = nodes.map(n => n.id);
         const uniqueIds = new Set(ids);
-        assert(ids.length > uniqueIds.size, 'Test setup: duplicate ids should exist');
+        expect(ids.length > uniqueIds.size).toBe(true);
       });
     });
   });
 
   describe('Edge validation', () => {
     describe('Required fields and constraints', () => {
-      it('should require source_id and target_id on edges', () => {
+      it('should require source and target on edges', () => {
         const edgeWithoutSource = {
-          target_id: 'symbolic-gofai',
+          target: 'symbolic-gofai',
           type: 'prerequisite',
-          confidence: 0.95
+          weight: 0.95
         };
-        assert(!edgeWithoutSource.source_id, 'source_id should be missing');
+        expect(!('source' in edgeWithoutSource) && !('source_id' in edgeWithoutSource)).toBe(true);
       });
 
       it('should validate edge type is one of 6 values', () => {
         const validEdgeTypes = ['prerequisite', 'descendant-of', 'historical-influence', 'substrate-of', 'uses', 'composes'];
-        assert.equal(validEdgeTypes.length, 6, 'Should have exactly 6 edge types');
+        expect(validEdgeTypes.length).toBe(6);
       });
 
-      it('should validate confidence is between 0.0 and 1.0 if present', () => {
-        const validConfidences = [0.0, 0.5, 0.95, 1.0];
-        const invalidConfidences = [-0.1, 1.1, 2.0];
-        validConfidences.forEach(c => assert(c >= 0 && c <= 1, `${c} should be valid`));
-        invalidConfidences.forEach(c => assert(!(c >= 0 && c <= 1), `${c} should be invalid`));
+      it('should validate weight is between 0.0 and 1.0 if present', () => {
+        const validWeights = [0.0, 0.5, 0.95, 1.0];
+        const invalidWeights = [-0.1, 1.1, 2.0];
+        validWeights.forEach(w => expect(w >= 0 && w <= 1).toBe(true));
+        invalidWeights.forEach(w => expect(!(w >= 0 && w <= 1)).toBe(true));
       });
 
-      it('should reject self-loops (source_id === target_id)', () => {
+      it('should reject self-loops (source === target)', () => {
         const selfLoop = {
-          source_id: 'symbolic-gofai',
-          target_id: 'symbolic-gofai',
+          source: 'symbolic-gofai',
+          target: 'symbolic-gofai',
           type: 'prerequisite'
         };
-        assert.equal(selfLoop.source_id, selfLoop.target_id, 'Test setup: self-loop');
+        expect(selfLoop.source === selfLoop.target).toBe(true);
       });
 
       it('should reject duplicate edges (same source, target, type)', () => {
         const edges = [
-          { source_id: 'a', target_id: 'b', type: 'prerequisite' },
-          { source_id: 'a', target_id: 'b', type: 'prerequisite' }
+          { source: 'a', target: 'b', type: 'prerequisite' },
+          { source: 'a', target: 'b', type: 'prerequisite' }
         ];
-        const edgeSignatures = edges.map(e => `${e.source_id}→${e.target_id}:${e.type}`);
+        const edgeSignatures = edges.map(e => `${e.source}→${e.target}:${e.type}`);
         const unique = new Set(edgeSignatures);
-        assert(edgeSignatures.length > unique.size, 'Test setup: duplicate edges');
+        expect(edgeSignatures.length > unique.size).toBe(true);
       });
     });
 
     describe('Referential integrity', () => {
-      it('should require source_id and target_id to exist in node catalog', () => {
+      it('should require source and target to exist in node catalog', () => {
         const nodes = [{ id: 'node-a' }, { id: 'node-b' }];
         const nodeIds = new Set(nodes.map(n => n.id));
 
-        const validEdge = { source_id: 'node-a', target_id: 'node-b', type: 'prerequisite' };
-        const invalidEdge = { source_id: 'node-c', target_id: 'node-b', type: 'prerequisite' };
+        const validEdge = { source: 'node-a', target: 'node-b', type: 'prerequisite' };
+        const invalidEdge = { source: 'node-c', target: 'node-b', type: 'prerequisite' };
 
-        assert(nodeIds.has(validEdge.source_id), 'Valid edge should have existing source');
-        assert(!nodeIds.has(invalidEdge.source_id), 'Invalid edge source should not exist');
+        expect(nodeIds.has(validEdge.source)).toBe(true);
+        expect(!nodeIds.has(invalidEdge.source)).toBe(true);
       });
     });
   });
 
   describe('Error reporting', () => {
     it('should report error location with file and line number', () => {
-      // Error format should be: "file.yaml:line_number: description"
       const errorFormat = /\.ya?ml:\d+:/;
       const exampleError = 'ai-nodes.yaml:15: invalid branch value';
-      assert(exampleError.match(errorFormat), 'Error should include file and line number');
+      expect(exampleError.match(errorFormat)).toBeTruthy();
     });
 
     it('should provide context in error messages', () => {
-      // Error should include field name, actual value, and constraint
       const goodError = 'ai-nodes.yaml:15: node "test-node" has invalid branch "foo" (must be one of 11 branches)';
-      assert(goodError.includes('test-node'), 'Error should identify the node');
-      assert(goodError.includes('branch'), 'Error should identify the field');
-      assert(goodError.includes('foo'), 'Error should show the invalid value');
-    });
-
-    it('should fail loudly on first error (all-or-nothing)', () => {
-      // Importer should exit with code 1 on validation failure
-      // No partial imports allowed
+      expect(goodError.includes('test-node')).toBe(true);
+      expect(goodError.includes('branch')).toBe(true);
+      expect(goodError.includes('foo')).toBe(true);
     });
   });
 
@@ -286,43 +279,6 @@ describe('YAML Importer (scripts/import-yaml.js)', () => {
       // - Create nodes successfully
       // - Skip edges import gracefully
       // - Report success (not failure)
-    });
-
-    it('should create deterministic output', () => {
-      // Running importer twice on same input should:
-      // - Result in identical database state
-      // - Not duplicate nodes or edges
-      // - Not leave orphaned data
-    });
-  });
-
-  describe('Integration with LadybugDB', () => {
-    it('should create database if not exists', () => {
-      // Importer should:
-      // - Create .ladybugdb/ directory
-      // - Apply schema from schema/graph.cypher
-      // - Populate tables
-    });
-
-    it('should populate Node table correctly', () => {
-      // After import:
-      // - Node table should have all required fields
-      // - All constraints from schema should be satisfied
-      // - Indices should be created
-    });
-
-    it('should handle arrays (aliases, anchors) correctly', () => {
-      // STRING[] properties should be:
-      // - Correctly parsed from YAML arrays
-      // - Stored in LadybugDB LIST format
-      // - Queryable and retrievable
-    });
-  });
-
-  describe('Batch import performance', () => {
-    it('should import 165 nodes in reasonable time', () => {
-      // Performance target: <30s for full import (per spec)
-      // With 165 nodes, should average <200ms per node
     });
   });
 });
@@ -341,8 +297,9 @@ nodes:
     anchors: []
 `;
     const parsed = yaml.load(yamlContent);
-    assert(parsed.nodes, 'Should parse YAML');
-    assert(parsed.nodes.length > 0, 'Should have nodes');
+    expect(parsed).toBeTruthy();
+    expect((parsed as any).nodes).toBeTruthy();
+    expect((parsed as any).nodes.length).toBeGreaterThan(0);
   });
 
   it('should report YAML parse errors with location', () => {
@@ -354,13 +311,13 @@ nodes:
     bad: [unclosed array
 `;
     // js-yaml should throw with line/column info
-    let error;
+    let error: any;
     try {
       yaml.load(invalidYaml);
     } catch (e) {
       error = e;
     }
-    assert(error, 'Should throw on invalid YAML');
-    assert(error.mark, 'Error should include location (mark)');
+    expect(error).toBeTruthy();
+    expect(error.mark).toBeTruthy();
   });
 });

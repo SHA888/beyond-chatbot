@@ -1,6 +1,7 @@
-const { strict: assert } = require('assert');
-const fs = require('fs');
-const path = require('path');
+import { describe, it, beforeAll, expect } from 'vitest';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 /**
  * Schema validation tests for LadybugDB
@@ -8,70 +9,70 @@ const path = require('path');
  */
 
 describe('LadybugDB Schema (schema/graph.cypher)', () => {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const schemaPath = path.join(__dirname, '../schema/graph.cypher');
-  let schemaContent;
+  let schemaContent: string;
 
-  before(() => {
+  beforeAll(() => {
     // Load and parse the DDL file
-    assert(fs.existsSync(schemaPath), `Schema file not found: ${schemaPath}`);
+    expect(fs.existsSync(schemaPath)).toBe(true);
     schemaContent = fs.readFileSync(schemaPath, 'utf8');
   });
 
   describe('Node schema', () => {
     it('should define a Node label', () => {
-      assert(schemaContent.includes('Node'), 'Schema should define Node label');
+      expect(schemaContent.includes('Node')).toBe(true);
     });
 
     it('should include id property on Node', () => {
-      assert(schemaContent.match(/(?:CREATE|id\s*:)/i), 'Node should have id property');
+      expect(schemaContent.match(/(?:CREATE|id\s*:)/i)).toBeTruthy();
     });
 
     it('should include name property on Node', () => {
-      assert(schemaContent.match(/name/i), 'Node should have name property');
+      expect(schemaContent.match(/name/i)).toBeTruthy();
     });
 
     it('should include branch property on Node', () => {
-      assert(schemaContent.match(/branch/i), 'Node should have branch property');
+      expect(schemaContent.match(/branch/i)).toBeTruthy();
     });
 
     it('should include type property on Node', () => {
-      assert(schemaContent.match(/type/i), 'Node should have type property');
+      expect(schemaContent.match(/type/i)).toBeTruthy();
     });
 
     it('should include status property on Node', () => {
-      assert(schemaContent.match(/status/i), 'Node should have status property');
+      expect(schemaContent.match(/status/i)).toBeTruthy();
     });
 
     it('should include descriptor property on Node', () => {
-      assert(schemaContent.match(/descriptor/i), 'Node should have descriptor property');
+      expect(schemaContent.match(/descriptor/i)).toBeTruthy();
     });
   });
 
   describe('Edge schema', () => {
     it('should define an Edge label', () => {
-      assert(schemaContent.includes('Edge') || schemaContent.match(/RELATIONSHIP|REL/i),
-        'Schema should define Edge/relationship');
+      expect(schemaContent.includes('Edge') || schemaContent.match(/RELATIONSHIP|REL/i)).toBeTruthy();
     });
 
     it('should include type property on Edge', () => {
       const edgeSection = schemaContent.toLowerCase();
-      assert(edgeSection.includes('type'), 'Edge should have type property');
+      expect(edgeSection.includes('type')).toBe(true);
     });
 
     it('should include confidence property on Edge', () => {
       const edgeSection = schemaContent.toLowerCase();
-      assert(edgeSection.includes('confidence'), 'Edge should have confidence property');
+      expect(edgeSection.includes('confidence')).toBe(true);
     });
 
     it('should include source_ref property on Edge', () => {
       const edgeSection = schemaContent.toLowerCase();
-      assert(edgeSection.includes('source_ref'), 'Edge should have source_ref property');
+      expect(edgeSection.includes('source_ref')).toBe(true);
     });
   });
 
   describe('Constraints', () => {
     it('should have a constraint on id being unique', () => {
-      assert(schemaContent.match(/UNIQUE|PRIMARY|KEY/i), 'Should have unique constraint on id');
+      expect(schemaContent.match(/UNIQUE|PRIMARY|KEY/i)).toBeTruthy();
     });
 
     it('should prevent self-loops (optional constraint)', () => {
@@ -92,34 +93,36 @@ describe('LadybugDB Schema (schema/graph.cypher)', () => {
       // Check for balanced parentheses and quotes
       const parenCount = (schemaContent.match(/\(/g) || []).length;
       const closeParenCount = (schemaContent.match(/\)/g) || []).length;
-      assert.equal(parenCount, closeParenCount, 'Mismatched parentheses in schema');
+      expect(parenCount).toBe(closeParenCount);
     });
 
     it('should contain CREATE statements', () => {
-      assert(schemaContent.match(/CREATE/i), 'Schema should contain CREATE statements');
+      expect(schemaContent.match(/CREATE/i)).toBeTruthy();
     });
   });
 
   describe('Property definitions', () => {
     it('should define aliases as array/list property', () => {
       // Check for LIST or ARRAY syntax
-      assert(schemaContent.match(/LIST|ARRAY|\[\]/i), 'Schema should support list properties for aliases');
+      expect(schemaContent.match(/LIST|ARRAY|\[\]/i)).toBeTruthy();
     });
 
     it('should define anchors as array/list property', () => {
-      assert(schemaContent.match(/LIST|ARRAY|\[\]/i), 'Schema should support list properties for anchors');
+      expect(schemaContent.match(/LIST|ARRAY|\[\]/i)).toBeTruthy();
     });
   });
 });
 
 describe('Schema application', () => {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const schemaPath = path.join(__dirname, '../schema/graph.cypher');
+
   it('should provide enough information to apply schema to a fresh database', () => {
-    const schemaPath = path.join(__dirname, '../schema/graph.cypher');
-    assert(fs.existsSync(schemaPath), 'schema/graph.cypher must exist');
+    expect(fs.existsSync(schemaPath)).toBe(true);
 
     const content = fs.readFileSync(schemaPath, 'utf8');
-    assert(content.length > 0, 'Schema file must not be empty');
-    assert(content.includes('Node'), 'Schema must define Node label');
-    assert(content.match(/Edge|RELATIONSHIP/i), 'Schema must define Edge/relationship');
+    expect(content.length).toBeGreaterThan(0);
+    expect(content.includes('Node')).toBe(true);
+    expect(content.match(/Edge|RELATIONSHIP/i)).toBeTruthy();
   });
 });
