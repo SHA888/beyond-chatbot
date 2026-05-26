@@ -33,6 +33,10 @@ interface ExportNode {
   type: string;
   status: string;
   degree: number;
+  descriptor: string;
+  era: string;
+  aliases?: string[];
+  anchors?: string[];
 }
 
 interface ExportEdge {
@@ -73,7 +77,7 @@ async function exportJson(): Promise<void> {
     // Query all nodes
     console.log('📊 Extracting nodes...');
     const nodeQueryResult = await conn.query(
-      'MATCH (n:Node) RETURN n.id AS id, n.name AS name, n.branch AS branch, n.type AS type, n.status AS status'
+      'MATCH (n:Node) RETURN n.id AS id, n.name AS name, n.branch AS branch, n.type AS type, n.status AS status, n.descriptor AS descriptor, n.era AS era, n.aliases AS aliases, n.anchors AS anchors'
     );
     const nodeResult = Array.isArray(nodeQueryResult) ? nodeQueryResult[0] : nodeQueryResult;
     const nodes = await nodeResult.getAll();
@@ -102,14 +106,26 @@ async function exportJson(): Promise<void> {
 
     // Build export nodes with degrees
     const exportNodes: ExportNode[] = nodes
-      .map((node: Record<string, any>) => ({
-        id: node.id,
-        name: node.name,
-        branch: node.branch,
-        type: node.type,
-        status: node.status,
-        degree: degreeMap.get(node.id) || 0
-      }))
+      .map((node: Record<string, any>) => {
+        const exportNode: ExportNode = {
+          id: node.id,
+          name: node.name,
+          branch: node.branch,
+          type: node.type,
+          status: node.status,
+          degree: degreeMap.get(node.id) || 0,
+          descriptor: node.descriptor,
+          era: node.era
+        };
+        // Only include optional fields if non-empty
+        if (node.aliases && Array.isArray(node.aliases) && node.aliases.length > 0) {
+          exportNode.aliases = node.aliases;
+        }
+        if (node.anchors && Array.isArray(node.anchors) && node.anchors.length > 0) {
+          exportNode.anchors = node.anchors;
+        }
+        return exportNode;
+      })
       .sort((a: ExportNode, b: ExportNode) => a.id.localeCompare(b.id));
 
     // Build export edges, sorted by (source, target)

@@ -80,7 +80,6 @@
   </aside>
 </div>
 
-<script src="https://unpkg.com/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
 <script src="https://unpkg.com/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
 <script>
 (async function () {
@@ -106,19 +105,11 @@
     "dormant":      "#3a3a3e",
   };
 
-  let nodesYaml, edgesYaml;
+  let graphData;
   try {
-    const [nResp, eResp] = await Promise.all([
-      fetch("./ai-nodes.yaml"),
-      fetch("./ai-edges.yaml").catch(() => null),
-    ]);
-    if (!nResp.ok) throw new Error("ai-nodes.yaml: " + nResp.status);
-    nodesYaml = jsyaml.load(await nResp.text());
-    if (eResp && eResp.ok) {
-      edgesYaml = jsyaml.load(await eResp.text()) || { edges: [] };
-    } else {
-      edgesYaml = { edges: [] };
-    }
+    const resp = await fetch("./dist/data/graph.json");
+    if (!resp.ok) throw new Error("graph.json: " + resp.status);
+    graphData = await resp.json();
   } catch (err) {
     renderError(err);
     return;
@@ -129,17 +120,21 @@
     cyDiv.textContent = "";
     const box = document.createElement("div");
     box.className = "error";
-    box.appendChild(document.createTextNode("Failed to load YAML."));
+    box.appendChild(document.createTextNode("Failed to load graph."));
     box.appendChild(document.createElement("br"));
     box.appendChild(document.createElement("br"));
-    box.appendChild(document.createTextNode("Serve over http, e.g. "));
+    box.appendChild(document.createTextNode("Make sure the project is built (run "));
     const c1 = document.createElement("code");
-    c1.textContent = "python3 -m http.server";
+    c1.textContent = "pnpm run build";
     box.appendChild(c1);
-    box.appendChild(document.createTextNode(" from the repo root, then open "));
+    box.appendChild(document.createTextNode("), then serve over http, e.g. "));
     const c2 = document.createElement("code");
-    c2.textContent = "http://localhost:8000/graph.html";
+    c2.textContent = "python3 -m http.server";
     box.appendChild(c2);
+    box.appendChild(document.createTextNode(" from the repo root, then open "));
+    const c3 = document.createElement("code");
+    c3.textContent = "http://localhost:8000/graph.html";
+    box.appendChild(c3);
     box.appendChild(document.createTextNode("."));
     box.appendChild(document.createElement("br"));
     box.appendChild(document.createElement("br"));
@@ -149,8 +144,8 @@
     cyDiv.appendChild(box);
   }
 
-  const nodes = nodesYaml.nodes || [];
-  const rawEdges = edgesYaml.edges || [];
+  const nodes = graphData.nodes || [];
+  const rawEdges = graphData.edges || [];
   const idSet = new Set(nodes.map(n => n.id));
 
   const branchList = [...new Set(nodes.map(n => n.branch))].sort();
