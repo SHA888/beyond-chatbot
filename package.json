@@ -2,7 +2,7 @@
   "name": "beyond-chatbot",
   "version": "0.1.0",
   "description": "Knowledge map of atomic AI/statistical-AI concepts with typed edges",
-  "type": "commonjs",
+  "type": "module",
   "main": "dist/data/graph.json",
   "engines": {
     "node": ">=14.15.0",

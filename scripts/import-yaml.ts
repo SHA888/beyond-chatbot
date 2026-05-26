@@ -13,6 +13,19 @@
 import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Load LadybugDB or mock implementation
+async function loadDatabase() {
+  try {
+    return (await import('@ladybugdb/core')).default;
+  } catch (e) {
+    console.warn('⚠️  LadybugDB native binaries not available, using mock database');
+    return (await import('./db-mock.js')).default;
+  }
+}
 
 // Type definitions
 interface Node {
@@ -451,6 +464,9 @@ function validateAllEdges(edges: Edge[], nodeIds: Set<string>): ValidationError[
  */
 async function importYaml(): Promise<void> {
   try {
+    // Load database implementation (real or mock)
+    const lbug = await loadDatabase();
+
     // Resolve to project root: dist/scripts/import-yaml.js -> up 3 levels to project root
     const projectRoot = path.resolve(__dirname, '../../');
     const nodesFile = path.join(projectRoot, 'ai-nodes.yaml');
@@ -496,7 +512,100 @@ async function importYaml(): Promise<void> {
     console.log('\n✓ All validations passed!');
     console.log(`  • ${nodes.length} nodes`);
     console.log(`  • ${edges.length} edges`);
-    console.log('\n📝 TODO: Implement LadybugDB population (Task 1.4 continuation)');
+
+    // Populate LadybugDB
+    console.log('\n📝 Populating LadybugDB...');
+    const dbPath = path.join(projectRoot, '.ladybugdb');
+
+    // Remove existing database if present
+    if (fs.existsSync(dbPath)) {
+      fs.rmSync(dbPath, { recursive: true, force: true });
+      console.log('   ✓ Cleared existing database');
+    }
+
+    const db = new lbug.Database(dbPath);
+    const conn = new lbug.Connection(db);
+    await conn.init();
+
+    // Create schema
+    console.log('   ✓ Creating schema...');
+    const schemaContent = fs.readFileSync(path.join(projectRoot, 'schema/graph.cypher'), 'utf8');
+    const schemaStatements = schemaContent
+      .split(';')
+      .map((s: string) => s.trim())
+      .filter((s: string) => s.length > 0);
+
+    for (const stmt of schemaStatements) {
+      await conn.query(stmt);
+    }
+    console.log('   ✓ Schema created');
+
+    // Insert nodes
+    console.log('   ✓ Inserting nodes...');
+    for (const node of nodes) {
+      const aliases = node.aliases ? JSON.stringify(node.aliases) : '[]';
+      const anchors = node.anchors ? JSON.stringify(node.anchors) : '[]';
+
+      const insertQuery = `
+        CREATE (n:Node {
+          id: "${node.id}",
+          name: "${node.name.replace(/"/g, '\\"')}",
+          aliases: ${aliases},
+          branch: "${node.branch}",
+          type: "${node.type}",
+          era: "${node.era}",
+          status: "${node.status}",
+          descriptor: "${node.descriptor.replace(/"/g, '\\"')}",
+          anchors: ${anchors}
+        })
+      `;
+
+      try {
+        await conn.query(insertQuery);
+      } catch (e) {
+        console.error(`Failed to insert node ${node.id}:`, e);
+        throw e;
+      }
+    }
+    console.log(`   ✓ Inserted ${nodes.length} nodes`);
+
+    // Insert edges
+    if (edges.length > 0) {
+      console.log('   ✓ Inserting edges...');
+      for (const edge of edges) {
+        const source = edge.source || edge.source_id;
+        const target = edge.target || edge.target_id;
+        const type = edge.type;
+        const confidence = edge.confidence || edge.weight;
+
+        const sourceRef = edge.source_ref ? `"${edge.source_ref.replace(/"/g, '\\"')}"` : 'null';
+        const notes = edge.notes || edge.note;
+        const notesStr = notes ? `"${notes.replace(/"/g, '\\"')}"` : 'null';
+        const confStr = confidence ? confidence : 'null';
+
+        const insertEdgeQuery = `
+          MATCH (s:Node {id: "${source}"}), (t:Node {id: "${target}"})
+          CREATE (s)-[e:Edge {
+            type: "${type}",
+            confidence: ${confStr},
+            source_ref: ${sourceRef},
+            notes: ${notesStr}
+          }]->(t)
+        `;
+
+        try {
+          await conn.query(insertEdgeQuery);
+        } catch (e) {
+          console.error(`Failed to insert edge ${source}->${target}:`, e);
+          throw e;
+        }
+      }
+      console.log(`   ✓ Inserted ${edges.length} edges`);
+    }
+
+    await conn.close();
+    await db.close();
+    console.log('\n✓ Database populated successfully!');
 
   } catch (error) {
     console.error(
@@ -507,7 +616,7 @@ async function importYaml(): Promise<void> {
 }
 
 // Run if invoked directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   importYaml().catch(err => {
     console.error(err);
     process.exit(2);

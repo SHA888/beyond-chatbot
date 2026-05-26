@@ -77,13 +77,13 @@ describe('LadybugDB Schema (schema/graph.cypher)', () => {
 
     it('should prevent self-loops (optional constraint)', () => {
       // This may be enforced at application level
-      const hasCheckConstraint = schemaContent.match(/CHECK|self/i);
+      schemaContent.match(/CHECK|self/i);
       // Not critical if not in DDL - can be enforced in application
     });
 
     it('should define edge type enum values', () => {
       const edgeTypes = ['prerequisite', 'descendant-of', 'historical-influence', 'substrate-of', 'uses', 'composes'];
-      const hasEdgeTypeConstraint = edgeTypes.some(type => schemaContent.includes(type));
+      edgeTypes.some(type => schemaContent.includes(type));
       // At least some reference to edge types should exist
     });
   });
