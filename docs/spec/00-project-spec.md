@@ -96,18 +96,26 @@ Six relationship types, immutable. No new types without spec revision.
 
 ## 3. Storage Model
 
-### 3.1 Canonical Store: Kùzu
+### 3.1 Canonical Store: LadybugDB
 
-**Kùzu** (embedded graph database) is the canonical storage layer.
+**LadybugDB** (embedded columnar graph database) is the canonical storage layer.
 
-- **Language:** Node.js bindings (confirmed working, see Task 1.2 validation).
+- **Language:** Node.js bindings via `@ladybugdb/core` (validated working, see Task 1.2 decision below).
 - **Schema:** Defined in `schema/graph.cypher` (see Task 1.3).
 - **Role:** Single source of truth for graph topology, enabling efficient queries and version control.
 
 **Design rationale:**
-- YAML is human-friendly for editing; Kùzu is machine-friendly for queries.
-- Kùzu is embedded (no external service), lightweight for small catalogs (165 nodes × 500 edges).
-- The project commits YAML sources; the build artifact (Kùzu DB) is transient.
+- YAML is human-friendly for editing; LadybugDB is machine-friendly for queries.
+- LadybugDB is embedded (no external service), lightweight for small catalogs (165 nodes × 500 edges), with columnar + vectorized execution for future scaling.
+- The project commits YAML sources; the build artifact (LadybugDB DB) is transient.
+
+**Tech-stack validation summary (Task 1.2, 2026-05-26):**
+- Kùzu was acquired by Apple (October 2025) and archived; no longer actively maintained.
+- **LadybugDB** is a Kùzu fork actively maintained as of May 2026 (v0.16.1, recent releases).
+- ✅ **Criterion (a):** LadybugDB is actively maintained by the LadybugDB community.
+- ✅ **Criterion (b):** Node.js bindings available via npm (`@ladybugdb/core`), prebuilt binaries bundled, no external downloads.
+- ✅ **Criterion (c):** Architecture (Node.js build → JSON export for browser) is ideal for 165 nodes × 500 edges; columnar + vectorized execution future-proofs for scaling.
+- **Decision:** Adopt LadybugDB. All downstream tasks use `@ladybugdb/core` npm package instead of `kuzu` npm package.
 
 ### 3.2 Authoring Layer: YAML
 
