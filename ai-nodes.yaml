@@ -1,50 +1,107 @@
+# AI Taxonomy — Node Catalog
+# Version: 0.1.0
+# Purpose: Atomic node content for a user-built "brain map" graph of AI/statistic-AI components.
+# Edges are deliberately omitted — graph structure is the user's design choice.
+#
+# Schema:
+#   id          : kebab-case slug, stable identifier
+#   name        : canonical display name
+#   aliases     : optional list of common alternative names
+#   branch      : top-level grouping (for filtering / colour, not edges)
+#   type        : algorithm | method | model-class | system | framework | math-construct
+#   era         : year or decade of significant introduction
+#   status      : foundational | active | legacy | emerging | dormant
+#   descriptor  : one technical sentence
+#   anchors     : list of concrete deployments / verifiable uses
+#
+# Branches:
+#   symbolic-gofai
+#   classical-ml
+#   deep-learning
+#   reinforcement-learning
+#   hybrid-neurosymbolic
+#   substrate-statistics
+#   substrate-optimization
+#   substrate-information-theory
+#   substrate-signal-processing
+#   information-retrieval-recommenders
+#   cross-cutting
+
 nodes:
+  # ==================== SYMBOLIC / GOFAI ====================
+
   - id: symbolic-gofai
     name: Symbolic AI
+    aliases: [GOFAI, Good Old-Fashioned AI, Classical AI]
     branch: symbolic-gofai
     type: framework
     era: 1956-present
     status: active
+    descriptor: AI based on explicit symbolic representations and rule-based manipulation; dominant paradigm from Dartmouth conference through the late 1980s, still active in verification and reasoning.
+    anchors:
+      [
+        AWS formal verification of cryptography,
+        Lean ecosystem,
+        compiler optimizations,
+      ]
+
   - id: knowledge-representation
     name: Knowledge Representation
+    aliases: [KR]
     branch: symbolic-gofai
     type: framework
     era: 1960s-present
     status: active
-    aliases:
-      - KR
+    descriptor: Encoding what is known about a domain in a form usable for inference; covers ontologies, frames, semantic networks, description logics.
+    anchors: [biomedical ontologies SNOMED-CT, Wikidata, schema.org]
+
   - id: ontologies
     name: Ontologies
     branch: symbolic-gofai
     type: method
     era: 1980s-present
     status: active
+    descriptor: Formal specification of concepts, classes, and relations in a domain; backbone of structured knowledge systems.
+    anchors: [Cyc, WordNet, Gene Ontology]
+
   - id: semantic-web
     name: Semantic Web
     branch: symbolic-gofai
     type: framework
     era: 2001-present
     status: active
+    descriptor: Web of machine-readable data using RDF triples, OWL ontologies, SPARQL queries; W3C standards stack.
+    anchors: [DBpedia, Wikidata, schema.org markup]
+
   - id: knowledge-graphs
     name: Knowledge Graphs
     branch: symbolic-gofai
     type: method
     era: 2012-present
     status: active
+    descriptor: Entity-relation graph stores combining ontology, instance data, and reasoning; popularized by Google KG.
+    anchors:
+      [Google Knowledge Graph, Facebook Open Graph, enterprise KGs in pharma]
+
   - id: logic-programming
     name: Logic Programming
     branch: symbolic-gofai
     type: framework
     era: 1972-present
     status: legacy
+    descriptor: Programs as logical clauses, computation as proof-search; SLD-resolution.
+    anchors: [Prolog, Datalog in datalog-rs and Soufflé for static analysis]
+
   - id: expert-systems
     name: Expert Systems
+    aliases: [Rule-Based Systems]
     branch: symbolic-gofai
     type: framework
     era: 1970s-1980s
     status: legacy
-    aliases:
-      - Rule-Based Systems
+    descriptor: Rule-engine systems encoding human-expert heuristics; commercial peak in the 1980s, still embedded in business-rules engines.
+    anchors: [Drools, IBM ODM, residual use in insurance underwriting]
+
   - id: mycin
     name: MYCIN
     branch: symbolic-gofai
@@ -52,26 +109,40 @@ nodes:
     era: 1972-1980
     status: legacy
     descriptor: Stanford expert system for diagnosing bacterial infections; introduced certainty factors and rule-based explanation.
+    anchors:
+      [
+        Stanford Heuristic Programming Project,
+        archetype of medical expert systems,
+      ]
+
   - id: watson-jeopardy
     name: IBM Watson (Jeopardy)
     branch: symbolic-gofai
     type: system
-    era: '2011'
+    era: 2011
     status: legacy
     descriptor: Hybrid IR + parsing + scoring system that won Jeopardy in 2011; mostly symbolic with statistical components.
+    anchors: [IBM Watson Jeopardy match Feb 2011]
+
   - id: automated-reasoning
     name: Automated Reasoning
     branch: symbolic-gofai
     type: framework
     era: 1960s-present
     status: active
+    descriptor: Computer-assisted proof of logical statements; covers theorem proving, SAT/SMT, model checking.
+    anchors: [seL4 microkernel verification, CompCert verified C compiler]
+
   - id: theorem-provers
     name: Interactive Theorem Provers
+    aliases: [Proof Assistants, ITPs]
     branch: symbolic-gofai
     type: system
     era: 1970s-present
     status: active
     descriptor: Tools for constructing machine-checked formal proofs using dependent type theory or higher-order logic.
+    anchors: [Lean 4, Coq/Rocq, Isabelle/HOL, Agda]
+
   - id: sat-smt-solvers
     name: SAT / SMT Solvers
     branch: symbolic-gofai
@@ -79,6 +150,14 @@ nodes:
     era: 1960s-present
     status: active
     descriptor: Decision procedures for Boolean satisfiability and satisfiability modulo theories; backbone of formal verification.
+    anchors:
+      [
+        Z3,
+        CVC5,
+        MiniSat,
+        used in symbolic execution and compiler test generation,
+      ]
+
   - id: planning-classical
     name: Classical Planning
     branch: symbolic-gofai
@@ -86,44 +165,56 @@ nodes:
     era: 1971-present
     status: active
     descriptor: Generating action sequences to achieve goals in deterministic discrete domains; STRIPS lineage.
+    anchors: [NASA Deep Space 1 Remote Agent, manufacturing scheduling]
+
   - id: pddl
     name: PDDL
+    aliases: [Planning Domain Definition Language]
     branch: symbolic-gofai
     type: framework
     era: 1998-present
     status: active
     descriptor: Standard language for specifying planning problems; lingua franca of the International Planning Competition.
-    aliases:
-      - Planning Domain Definition Language
+    anchors: [International Planning Competition, NASA mission planning]
+
   - id: htn-planning
     name: Hierarchical Task Network Planning
+    aliases: [HTN]
     branch: symbolic-gofai
     type: algorithm
     era: 1970s-present
     status: active
     descriptor: Planning by decomposing tasks into subtasks via predefined methods.
-    aliases:
-      - HTN
+    anchors:
+      [game AI in Killzone and Horizon Zero Dawn, military logistics planners]
+
   - id: classical-search
     name: Classical Search
     branch: symbolic-gofai
     type: framework
     era: 1950s-present
     status: foundational
+    descriptor: Uninformed and informed search over state spaces; BFS, DFS, IDS, best-first, A*, IDA*.
+    anchors: [puzzle solvers, route planners, every undergraduate AI course]
+
   - id: a-star
     name: A* Search
     branch: symbolic-gofai
     type: algorithm
-    era: '1968'
+    era: 1968
     status: foundational
     descriptor: Best-first graph search using f(n) = g(n) + h(n); optimal and complete when h is admissible.
+    anchors: [Google Maps routing, video-game pathfinding, robot navigation]
+
   - id: dijkstra
     name: Dijkstra's Algorithm
     branch: symbolic-gofai
     type: algorithm
-    era: '1956'
+    era: 1956
     status: foundational
     descriptor: Single-source shortest paths in non-negative weighted graphs; special case of A* with h=0.
+    anchors: [OSPF link-state routing, network protocols, baseline pathfinding]
+
   - id: minimax-alpha-beta
     name: Minimax with Alpha-Beta Pruning
     branch: symbolic-gofai
@@ -131,43 +222,72 @@ nodes:
     era: 1950s-1960s
     status: foundational
     descriptor: Adversarial game-tree search with pruning of provably-dominated branches.
+    anchors:
+      [
+        Stockfish chess engine,
+        Deep Blue defeating Kasparov 1997,
+        classical board-game AIs,
+      ]
+
   - id: mcts
     name: Monte Carlo Tree Search
+    aliases: [MCTS, UCT]
     branch: symbolic-gofai
     type: algorithm
-    era: '2006'
+    era: 2006
     status: active
     descriptor: Tree search guided by random rollouts and the UCB1 selection rule; revolutionized computer Go before deep learning.
+    anchors:
+      [
+        MoGo and Crazy Stone Go programs,
+        AlphaGo combined MCTS with neural networks,
+      ]
+
   - id: constraint-satisfaction
     name: Constraint Satisfaction Problems
+    aliases: [CSP]
     branch: symbolic-gofai
     type: framework
     era: 1970s-present
     status: active
     descriptor: Finding variable assignments that satisfy a set of constraints; backtracking with arc consistency.
-    aliases:
-      - CSP
+    anchors: [Sudoku solvers, timetabling, n-queens, Google OR-Tools]
+
   - id: cognitive-architectures
     name: Cognitive Architectures
     branch: symbolic-gofai
     type: framework
     era: 1980s-present
     status: dormant
+    descriptor: Unified computational models of mind aiming to integrate perception, memory, reasoning, learning.
+    anchors: [SOAR, ACT-R used in HCI and education research]
+
   - id: fuzzy-logic
     name: Fuzzy Logic
     branch: symbolic-gofai
     type: framework
     era: 1965-present
     status: legacy
+    descriptor: Multivalued logic with degrees of truth in [0,1]; pairs naturally with fuzzy control.
+    anchors:
+      [
+        Japanese rice cookers and air conditioners,
+        washing machines,
+        embedded controllers,
+      ]
+
   - id: case-based-reasoning
     name: Case-Based Reasoning
+    aliases: [CBR]
     branch: symbolic-gofai
     type: framework
     era: 1980s-present
     status: legacy
     descriptor: Solving new problems by retrieving and adapting solutions from a memory of past cases.
-    aliases:
-      - CBR
+    anchors: [helpdesk systems, early medical decision support]
+
+  # ==================== CLASSICAL ML ====================
+
   - id: classical-ml
     name: Classical / Statistical Machine Learning
     branch: classical-ml
@@ -175,6 +295,8 @@ nodes:
     era: 1990s-present
     status: active
     descriptor: Learning patterns from data with shallow models; the workhorse paradigm for tabular and structured-data problems.
+    anchors: [most production ML at banks, telcos, ad-tech, Kaggle]
+
   - id: supervised-learning
     name: Supervised Learning
     branch: classical-ml
@@ -182,80 +304,115 @@ nodes:
     era: 1950s-present
     status: foundational
     descriptor: Learning a mapping from inputs to labeled outputs by minimizing prediction error.
+    anchors: [credit scoring, churn prediction, medical diagnosis]
+
   - id: linear-regression
     name: Linear Regression
+    aliases: [OLS, Ordinary Least Squares]
     branch: classical-ml
     type: algorithm
-    era: '1805'
+    era: 1805
     status: foundational
     descriptor: Linear model fit by minimizing squared residuals; the oldest and most-used statistical method.
+    anchors: [econometrics, A/B test analysis, baseline for any regression task]
+
   - id: logistic-regression
     name: Logistic Regression
     branch: classical-ml
     type: algorithm
-    era: '1944'
+    era: 1944
     status: foundational
     descriptor: Linear model with sigmoid link for binary classification; calibrated probabilities by default.
+    anchors:
+      [
+        credit scoring,
+        clinical risk scores,
+        ad click-through prediction baselines,
+      ]
+
   - id: glm
     name: Generalized Linear Models
+    aliases: [GLM]
     branch: classical-ml
     type: framework
-    era: '1972'
+    era: 1972
     status: foundational
     descriptor: Unified framework for regression with exponential-family responses via a link function.
-    aliases:
-      - GLM
+    anchors: [actuarial pricing, epidemiology, R's glm function]
+
   - id: svm
     name: Support Vector Machines
+    aliases: [SVM]
     branch: classical-ml
     type: algorithm
-    era: '1995'
+    era: 1995
     status: active
     descriptor: Maximum-margin classifiers with the kernel trick for non-linear decision boundaries.
-    aliases:
-      - SVM
+    anchors:
+      [text classification 1990s-2010s, bioinformatics, libsvm widely embedded]
+
   - id: decision-trees
     name: Decision Trees
     branch: classical-ml
     type: algorithm
-    era: '1984'
+    era: 1984
     status: foundational
     descriptor: Recursive partitioning of feature space via greedy splits on information gain or Gini impurity.
+    anchors: [CART, C4.5, ID3, building block for forests and boosting]
+
   - id: random-forest
     name: Random Forest
     branch: classical-ml
     type: algorithm
-    era: '2001'
+    era: 2001
     status: active
     descriptor: Bagged ensemble of decision trees with random feature subsampling; robust default classifier.
+    anchors:
+      [
+        Microsoft Kinect body-part recognition,
+        scikit-learn default,
+        Kaggle baseline,
+      ]
+
   - id: adaboost
     name: AdaBoost
     branch: classical-ml
     type: algorithm
-    era: '1995'
+    era: 1995
     status: legacy
     descriptor: Adaptive boosting; sequentially reweights training examples to focus on previously misclassified ones.
+    anchors: [Viola-Jones face detector, prototypical boosting algorithm]
+
   - id: gradient-boosting
     name: Gradient Boosting Machines
+    aliases: [GBM]
     branch: classical-ml
     type: algorithm
-    era: '1999'
+    era: 1999
     status: active
-    aliases:
-      - GBM
+    descriptor: Boosting framework where each weak learner fits the gradient of the loss; underlies XGBoost, LightGBM, CatBoost.
+    anchors:
+      [Yandex search ranking, Microsoft Bing ranking, dominant Kaggle algorithm]
+
   - id: xgboost
     name: XGBoost
     branch: classical-ml
     type: framework
-    era: '2014'
+    era: 2014
     status: active
+    descriptor: Scalable gradient-boosted-tree library with regularization, sparsity handling, parallel split-finding.
+    anchors:
+      [Kaggle competition wins 2015-2019, production fraud and risk models]
+
   - id: lightgbm
     name: LightGBM
     branch: classical-ml
     type: framework
-    era: '2017'
+    era: 2017
     status: active
     descriptor: Microsoft gradient-boosting library using histogram-based learning and leaf-wise growth for speed on large datasets.
+    anchors: [Microsoft ad systems, production tabular ML at scale]
+
   - id: naive-bayes
     name: Naive Bayes
     branch: classical-ml
@@ -263,44 +420,62 @@ nodes:
     era: 1960s
     status: active
     descriptor: Bayesian classifier assuming conditional independence of features given the class; strong baseline for text.
+    anchors:
+      [SpamAssassin and early Gmail spam filters, document categorization]
+
   - id: knn
     name: k-Nearest Neighbors
+    aliases: [kNN]
     branch: classical-ml
     type: algorithm
-    era: '1951'
+    era: 1951
     status: foundational
     descriptor: Non-parametric classifier predicting the majority label among the k nearest training points.
-    aliases:
-      - kNN
+    anchors:
+      [
+        recommendation baselines,
+        image-search prototypes,
+        foundational ML pedagogy,
+      ]
+
   - id: unsupervised-learning
     name: Unsupervised Learning
     branch: classical-ml
     type: framework
     era: 1960s-present
     status: foundational
+    descriptor: Learning structure from unlabeled data; clustering, density estimation, dimensionality reduction.
+    anchors: [customer segmentation, anomaly detection, exploratory analysis]
+
   - id: k-means
     name: k-Means Clustering
     branch: classical-ml
     type: algorithm
-    era: '1957'
+    era: 1957
     status: foundational
     descriptor: Iterative partitioning into k clusters by minimizing within-cluster sum of squares.
+    anchors:
+      [customer segmentation, image colour quantization, vector quantization]
+
   - id: dbscan
     name: DBSCAN
     branch: classical-ml
     type: algorithm
-    era: '1996'
+    era: 1996
     status: active
     descriptor: Density-based clustering that discovers arbitrarily-shaped clusters and labels noise points.
+    anchors: [geospatial clustering, anomaly-aware customer segmentation]
+
   - id: gmm
     name: Gaussian Mixture Models
+    aliases: [GMM]
     branch: classical-ml
     type: model-class
     era: 1960s-present
     status: foundational
     descriptor: Probabilistic clustering as a weighted sum of Gaussian components fit by EM.
-    aliases:
-      - GMM
+    anchors: [speaker verification systems pre-DL, audio segmentation]
+
   - id: hierarchical-clustering
     name: Hierarchical Clustering
     branch: classical-ml
@@ -308,6 +483,8 @@ nodes:
     era: 1960s
     status: foundational
     descriptor: Agglomerative or divisive construction of a cluster dendrogram by successive merges or splits.
+    anchors: [phylogenetic tree construction, gene-expression analysis]
+
   - id: spectral-clustering
     name: Spectral Clustering
     branch: classical-ml
@@ -315,160 +492,217 @@ nodes:
     era: 2000s
     status: active
     descriptor: Clustering via eigenvectors of a graph Laplacian; captures non-convex cluster shapes.
+    anchors: [community detection, image segmentation]
+
   - id: pca
     name: Principal Component Analysis
+    aliases: [PCA]
     branch: classical-ml
     type: algorithm
-    era: '1901'
+    era: 1901
     status: foundational
     descriptor: Linear dimensionality reduction via the eigendecomposition of the covariance matrix.
-    aliases:
-      - PCA
+    anchors:
+      [
+        Eigenfaces,
+        exploratory data analysis,
+        preprocessing for downstream models,
+      ]
+
   - id: ica
     name: Independent Component Analysis
+    aliases: [ICA]
     branch: classical-ml
     type: algorithm
     era: 1990s
     status: active
     descriptor: Decomposition into statistically independent non-Gaussian sources; the cocktail party problem.
-    aliases:
-      - ICA
+    anchors: [EEG and fMRI artifact removal, blind source separation]
+
   - id: t-sne
     name: t-SNE
+    aliases: [t-Distributed Stochastic Neighbor Embedding]
     branch: classical-ml
     type: algorithm
-    era: '2008'
+    era: 2008
     status: active
     descriptor: Non-linear dimensionality reduction preserving local neighborhood structure for 2D-3D visualization.
-    aliases:
-      - t-Distributed Stochastic Neighbor Embedding
+    anchors: [single-cell RNA-seq visualization, embedding inspection]
+
   - id: umap
     name: UMAP
+    aliases: [Uniform Manifold Approximation and Projection]
     branch: classical-ml
     type: algorithm
-    era: '2018'
+    era: 2018
     status: active
     descriptor: Manifold-learning dimensionality reduction often preferred over t-SNE for speed and global structure.
-    aliases:
-      - Uniform Manifold Approximation and Projection
+    anchors: [bioinformatics single-cell analysis, embedding visualization]
+
   - id: pgm
     name: Probabilistic Graphical Models
+    aliases: [PGM]
     branch: classical-ml
     type: framework
     era: 1980s-present
     status: active
     descriptor: Joint distributions factored according to a graph; inference via message passing or sampling.
-    aliases:
-      - PGM
+    anchors: [biostatistics, structured prediction, robotics state estimation]
+
   - id: bayesian-networks
     name: Bayesian Networks
     branch: classical-ml
     type: model-class
-    era: '1985'
+    era: 1985
     status: active
     descriptor: Directed acyclic graphs encoding conditional independence among variables for probabilistic inference.
+    anchors: [medical diagnosis systems, fault diagnosis, risk modeling]
+
   - id: hmm
     name: Hidden Markov Models
+    aliases: [HMM]
     branch: classical-ml
     type: model-class
     era: 1960s-present
     status: legacy
     descriptor: Sequential latent-state model with discrete states and observation emissions; Viterbi and Baum-Welch.
-    aliases:
-      - HMM
+    anchors:
+      [
+        pre-deep-learning speech recognition through 2010s,
+        biological sequence alignment,
+      ]
+
   - id: crf
     name: Conditional Random Fields
+    aliases: [CRF]
     branch: classical-ml
     type: model-class
-    era: '2001'
+    era: 2001
     status: active
     descriptor: Discriminative undirected graphical models for structured prediction; the standard for NER before neural sequence models.
-    aliases:
-      - CRF
+    anchors:
+      [named entity recognition pre-DL, part-of-speech tagging, gene prediction]
+
   - id: lda-topic-modeling
     name: Latent Dirichlet Allocation
+    aliases: [LDA]
     branch: classical-ml
     type: model-class
-    era: '2003'
+    era: 2003
     status: active
     descriptor: Generative probabilistic model for document collections as mixtures over latent topics.
-    aliases:
-      - LDA
+    anchors:
+      [topic discovery in news corpora, scientific literature analysis pre-LLM]
+
   - id: bayesian-inference-methods
     name: Bayesian Inference Methods
     branch: classical-ml
     type: framework
     era: 1763-present
     status: foundational
+    descriptor: Updating posterior beliefs from priors and likelihoods; computationally realized via MCMC, VI, ABC.
+    anchors: [Stan, PyMC, NumPyro, clinical trials, A/B testing platforms]
+
   - id: mcmc
     name: Markov Chain Monte Carlo
+    aliases: [MCMC]
     branch: classical-ml
     type: algorithm
     era: 1953-present
     status: foundational
     descriptor: Family of sampling algorithms drawing from a target distribution by constructing a Markov chain with that stationary distribution.
-    aliases:
-      - MCMC
+    anchors: [Metropolis-Hastings, Gibbs, HMC and NUTS in Stan and PyMC]
+
   - id: variational-inference
     name: Variational Inference
+    aliases: [VI]
     branch: classical-ml
     type: algorithm
     era: 1990s-present
     status: active
     descriptor: Approximate Bayesian inference by optimizing a tractable distribution to minimize KL divergence from the posterior.
-    aliases:
-      - VI
+    anchors: [VAEs, large-scale Bayesian neural networks, Pyro and TFP]
+
   - id: time-series-models
     name: Time-Series Models
     branch: classical-ml
     type: framework
     era: 1920s-present
     status: foundational
+    descriptor: Models for sequential data with temporal dependence; AR, MA, ARMA, ARIMA, state-space.
+    anchors: [econometric forecasting, demand forecasting, sensor monitoring]
+
   - id: arima
     name: ARIMA
+    aliases: [Autoregressive Integrated Moving Average]
     branch: classical-ml
     type: model-class
-    era: '1970'
+    era: 1970
     status: foundational
-    aliases:
-      - Autoregressive Integrated Moving Average
+    descriptor: Box-Jenkins model combining autoregression, differencing, and moving-average terms for stationary series.
+    anchors: [supply-chain demand forecasting, financial time-series baselines]
+
   - id: kalman-filter
     name: Kalman Filter
     branch: classical-ml
     type: algorithm
-    era: '1960'
+    era: 1960
     status: foundational
     descriptor: Recursive Bayesian estimator for linear-Gaussian state-space models; optimal under those assumptions.
+    anchors:
+      [
+        Apollo guidance computer,
+        GPS receiver fusion,
+        missile guidance,
+        robotics sensor fusion,
+      ]
+
   - id: particle-filter
     name: Particle Filter
+    aliases: [Sequential Monte Carlo]
     branch: classical-ml
     type: algorithm
-    era: '1993'
+    era: 1993
     status: active
     descriptor: Sampling-based nonlinear state estimator using a set of weighted particles.
-    aliases:
-      - Sequential Monte Carlo
+    anchors: [robot localization SLAM, target tracking in radar]
+
   - id: survival-analysis
     name: Survival Analysis
     branch: classical-ml
     type: framework
     era: 1958-present
     status: active
+    descriptor: Modeling time-to-event data with censoring; Kaplan-Meier estimator, Cox proportional hazards.
+    anchors:
+      [clinical trial analysis, customer churn timing, hardware reliability]
+
   - id: anomaly-detection
     name: Anomaly Detection
+    aliases: [Outlier Detection]
     branch: classical-ml
     type: framework
     era: 1960s-present
     status: active
-    aliases:
-      - Outlier Detection
+    descriptor: Identifying observations deviating from expected patterns; statistical, density, distance, or model-based.
+    anchors:
+      [
+        credit-card fraud detection,
+        network intrusion detection,
+        manufacturing QC,
+      ]
+
   - id: isolation-forest
     name: Isolation Forest
     branch: classical-ml
     type: algorithm
-    era: '2008'
+    era: 2008
     status: active
     descriptor: Anomaly detection by recursive random partitioning; anomalies isolate with shorter average path length.
+    anchors: [fraud detection systems, scikit-learn outlier detection default]
+
+  # ==================== DEEP LEARNING ====================
+
   - id: deep-learning
     name: Deep Learning
     branch: deep-learning
@@ -476,63 +710,88 @@ nodes:
     era: 2012-present
     status: active
     descriptor: Multi-layer neural networks trained end-to-end via backpropagation; the dominant paradigm since AlexNet.
+    anchors: [ImageNet revolution 2012, all modern frontier AI systems]
+
   - id: mlp
     name: Multi-Layer Perceptron
+    aliases: [MLP, Feedforward Neural Network]
     branch: deep-learning
     type: model-class
-    era: '1986'
+    era: 1986
     status: foundational
     descriptor: Fully-connected feedforward network with at least one hidden layer; the universal function approximator.
+    anchors: [the building block embedded in every modern architecture]
+
   - id: cnn
     name: Convolutional Neural Networks
+    aliases: [CNN, ConvNet]
     branch: deep-learning
     type: model-class
-    era: '1989'
+    era: 1989
     status: active
     descriptor: Networks with weight-shared local receptive fields; dominant for grid-structured data.
+    anchors:
+      [
+        AlexNet ImageNet 2012,
+        ResNet,
+        early Facebook photo tagging,
+        medical imaging,
+      ]
+
   - id: rnn
     name: Recurrent Neural Networks
+    aliases: [RNN]
     branch: deep-learning
     type: model-class
     era: 1980s
     status: legacy
     descriptor: Networks with cyclic connections enabling sequential processing; largely superseded by Transformers.
-    aliases:
-      - RNN
+    anchors: [Elman networks, baseline for sequence modeling in the 2010s]
+
   - id: lstm
     name: Long Short-Term Memory
+    aliases: [LSTM]
     branch: deep-learning
     type: model-class
-    era: '1997'
+    era: 1997
     status: legacy
     descriptor: Gated RNN designed to mitigate vanishing gradients via a cell state and input/forget/output gates.
-    aliases:
-      - LSTM
+    anchors: [Google Translate neural MT 2016, Siri 2014-era acoustic models]
+
   - id: gru
     name: Gated Recurrent Unit
+    aliases: [GRU]
     branch: deep-learning
     type: model-class
-    era: '2014'
+    era: 2014
     status: legacy
     descriptor: Streamlined gated RNN with reset and update gates; cheaper alternative to LSTM.
-    aliases:
-      - GRU
+    anchors: [neural MT systems mid-2010s, sequence baselines]
+
   - id: transformer
     name: Transformer
     branch: deep-learning
     type: model-class
-    era: '2017'
+    era: 2017
     status: active
     descriptor: Attention-only architecture without recurrence or convolution; foundation of all modern foundation models.
+    anchors: [Attention Is All You Need 2017, GPT, BERT, Claude, Gemini, Llama]
+
   - id: gnn
     name: Graph Neural Networks
+    aliases: [GNN]
     branch: deep-learning
     type: model-class
     era: 2016-present
     status: active
     descriptor: Neural networks that operate on graph-structured input via message passing between nodes.
-    aliases:
-      - GNN
+    anchors:
+      [
+        DeepMind ETA prediction in Google Maps,
+        drug-discovery models,
+        fraud rings,
+      ]
+
   - id: autoencoder
     name: Autoencoders
     branch: deep-learning
@@ -540,24 +799,29 @@ nodes:
     era: 1980s-present
     status: active
     descriptor: Neural networks trained to reconstruct their input through a bottleneck representation.
+    anchors: [dimensionality reduction, denoising, anomaly detection]
+
   - id: vae
     name: Variational Autoencoders
+    aliases: [VAE]
     branch: deep-learning
     type: model-class
-    era: '2013'
+    era: 2013
     status: active
     descriptor: Generative autoencoders with a probabilistic latent space trained via the evidence lower bound.
-    aliases:
-      - VAE
+    anchors:
+      [molecule generation in drug discovery, representation learning baseline]
+
   - id: gan
     name: Generative Adversarial Networks
+    aliases: [GAN]
     branch: deep-learning
     type: model-class
-    era: '2014'
+    era: 2014
     status: legacy
     descriptor: Generator-discriminator pair trained adversarially to produce realistic samples.
-    aliases:
-      - GAN
+    anchors: [StyleGAN photorealistic faces, deepfake era 2017-2022]
+
   - id: diffusion-models
     name: Diffusion Models
     branch: deep-learning
@@ -565,30 +829,37 @@ nodes:
     era: 2020-present
     status: active
     descriptor: Generative models that learn to reverse a gradual noising process; current state of the art for image and video.
+    anchors: [Stable Diffusion, DALL-E 2/3, Midjourney, Sora]
+
   - id: neural-ode
     name: Neural Ordinary Differential Equations
+    aliases: [Neural ODE]
     branch: deep-learning
     type: model-class
-    era: '2018'
+    era: 2018
     status: emerging
     descriptor: Continuous-depth networks parameterizing the derivative of the hidden state with an ODE solver.
-    aliases:
-      - Neural ODE
+    anchors: [continuous normalizing flows, irregular time-series modeling]
+
   - id: foundation-models
     name: Foundation Models
     branch: deep-learning
     type: framework
     era: 2021-present
     status: active
+    descriptor: Large-scale self-supervised models trained on broad data, adapted to many downstream tasks.
+    anchors: [Stanford HAI 2021 framing, GPT-3 onward, CLIP, SAM]
+
   - id: self-supervised-learning
     name: Self-Supervised Learning
+    aliases: [SSL]
     branch: deep-learning
     type: framework
     era: 2018-present
     status: active
     descriptor: Learning representations from unlabeled data via pretext tasks; the engine of foundation models.
-    aliases:
-      - SSL
+    anchors: [BERT masked language modeling, SimCLR, DINO]
+
   - id: contrastive-learning
     name: Contrastive Learning
     branch: deep-learning
@@ -596,134 +867,184 @@ nodes:
     era: 2018-present
     status: active
     descriptor: Representation learning by pulling similar pairs together and pushing dissimilar pairs apart in embedding space.
+    anchors: [SimCLR, MoCo, CLIP image-text alignment]
+
   - id: llm
     name: Large Language Models
+    aliases: [LLM]
     branch: deep-learning
     type: model-class
     era: 2020-present
     status: active
-    aliases:
-      - LLM
+    descriptor: Transformer language models scaled to hundreds of billions of parameters, trained on web-scale text.
+    anchors: [GPT family, Claude, Gemini, Llama, DeepSeek]
+
   - id: multimodal-models
     name: Multimodal Models
     branch: deep-learning
     type: model-class
     era: 2021-present
     status: active
+    descriptor: Models that jointly process and align multiple modalities such as text, image, audio, video.
+    anchors: [GPT-4V, Gemini, Claude with vision, CLIP]
+
   - id: clip
     name: CLIP
+    aliases: [Contrastive Language-Image Pretraining]
     branch: deep-learning
     type: system
-    era: '2021'
+    era: 2021
     status: active
     descriptor: OpenAI dual-encoder aligning images and text in a shared embedding via contrastive learning.
-    aliases:
-      - Contrastive Language-Image Pretraining
+    anchors:
+      [
+        zero-shot image classification,
+        embedding backbone for many downstream systems,
+      ]
+
   - id: sam
     name: Segment Anything Model
+    aliases: [SAM]
     branch: deep-learning
     type: system
-    era: '2023'
+    era: 2023
     status: active
-    aliases:
-      - SAM
+    descriptor: Meta foundation model for promptable image segmentation, trained on 1.1B masks.
+    anchors: [interactive image-editing tools, scientific imaging segmentation]
+
   - id: whisper
     name: Whisper
     branch: deep-learning
     type: system
-    era: '2022'
+    era: 2022
     status: active
     descriptor: OpenAI multilingual speech-recognition model trained on 680k hours of weakly supervised audio.
+    anchors:
+      [
+        open-source transcription pipelines,
+        modern podcast and meeting transcription,
+      ]
+
   - id: yolo
     name: YOLO
+    aliases: [You Only Look Once]
     branch: deep-learning
     type: model-class
-    era: '2016'
+    era: 2016
     status: active
     descriptor: Single-stage real-time object detector predicting bounding boxes and class probabilities in one forward pass.
-    aliases:
-      - You Only Look Once
+    anchors:
+      [
+        edge-camera object detection,
+        retail analytics,
+        autonomous-driving perception baselines,
+      ]
+
   - id: u-net
     name: U-Net
     branch: deep-learning
     type: model-class
-    era: '2015'
+    era: 2015
     status: active
+    descriptor: Encoder-decoder CNN with skip connections, designed for biomedical image segmentation.
+    anchors:
+      [
+        medical image segmentation,
+        geospatial imagery,
+        used as denoiser in diffusion models,
+      ]
+
   - id: nerf
     name: Neural Radiance Fields
+    aliases: [NeRF]
     branch: deep-learning
     type: model-class
-    era: '2020'
+    era: 2020
     status: active
     descriptor: Neural representation of a 3D scene as a continuous volumetric radiance field for novel view synthesis.
-    aliases:
-      - NeRF
+    anchors: [Luma AI, AR/VR scene capture, 3D reconstruction research]
+
   - id: tts
     name: Text-to-Speech (Neural)
+    aliases: [TTS]
     branch: deep-learning
     type: framework
     era: 2016-present
     status: active
     descriptor: Neural waveform or spectrogram generation conditioned on text; replaced concatenative and parametric TTS.
-    aliases:
-      - TTS
+    anchors: [WaveNet, Tacotron, ElevenLabs, modern voice assistants]
+
+  # ==================== REINFORCEMENT LEARNING ====================
+
   - id: reinforcement-learning
     name: Reinforcement Learning
+    aliases: [RL]
     branch: reinforcement-learning
     type: framework
     era: 1980s-present
     status: active
     descriptor: Learning policies by interaction with an environment to maximize cumulative reward; framed as MDPs.
-    aliases:
-      - RL
+    anchors: [game-playing agents, robotics, RLHF in modern LLM post-training]
+
   - id: q-learning
     name: Q-Learning
     branch: reinforcement-learning
     type: algorithm
-    era: '1989'
+    era: 1989
     status: foundational
     descriptor: Off-policy value-based RL learning the action-value function via the Bellman optimality equation.
+    anchors: [tabular RL baseline, textbook foundation]
+
   - id: sarsa
     name: SARSA
     branch: reinforcement-learning
     type: algorithm
-    era: '1994'
+    era: 1994
     status: foundational
     descriptor: On-policy TD-learning of the action-value function; learns the value of the policy actually being followed.
+    anchors:
+      [classroom complement to Q-learning, safer in some exploration regimes]
+
   - id: dqn
     name: Deep Q-Network
+    aliases: [DQN]
     branch: reinforcement-learning
     type: algorithm
     era: 2013-2015
     status: active
     descriptor: Q-learning with a deep neural function approximator stabilized by experience replay and target networks.
-    aliases:
-      - DQN
+    anchors: [DeepMind Atari benchmark 2013-2015]
+
   - id: reinforce
     name: REINFORCE
     branch: reinforcement-learning
     type: algorithm
-    era: '1992'
+    era: 1992
     status: foundational
     descriptor: Monte Carlo policy-gradient algorithm using the likelihood-ratio trick.
+    anchors: [foundation for all modern policy-gradient methods]
+
   - id: ppo
     name: Proximal Policy Optimization
+    aliases: [PPO]
     branch: reinforcement-learning
     type: algorithm
-    era: '2017'
+    era: 2017
     status: active
     descriptor: Policy-gradient algorithm with a clipped surrogate objective limiting per-step policy updates.
-    aliases:
-      - PPO
+    anchors:
+      [OpenAI Dota 2 Five, InstructGPT / ChatGPT RLHF, robotics policy learning]
+
   - id: trpo
     name: Trust Region Policy Optimization
+    aliases: [TRPO]
     branch: reinforcement-learning
     type: algorithm
-    era: '2015'
+    era: 2015
     status: legacy
     descriptor: Policy gradient with a hard KL constraint on policy updates; PPO is its simpler successor.
-    aliases:
-      - TRPO
+    anchors: [predecessor to PPO in continuous-control benchmarks]
+
   - id: actor-critic
     name: Actor-Critic Methods
     branch: reinforcement-learning
@@ -731,15 +1052,18 @@ nodes:
     era: 1980s-present
     status: active
     descriptor: Hybrid of policy gradients (actor) and value learning (critic) for variance reduction.
+    anchors: [A2C, A3C, baseline architecture for most continuous-control RL]
+
   - id: sac
     name: Soft Actor-Critic
+    aliases: [SAC]
     branch: reinforcement-learning
     type: algorithm
-    era: '2018'
+    era: 2018
     status: active
     descriptor: Off-policy maximum-entropy actor-critic for continuous control; sample-efficient and stable.
-    aliases:
-      - SAC
+    anchors: [continuous-control robotics, sim-to-real transfer research]
+
   - id: model-based-rl
     name: Model-Based RL
     branch: reinforcement-learning
@@ -747,72 +1071,116 @@ nodes:
     era: 1990s-present
     status: active
     descriptor: RL methods that learn or exploit an explicit environment model to plan or improve sample efficiency.
+    anchors: [Dyna architecture, world-model approaches]
+
   - id: muzero
     name: MuZero
     branch: reinforcement-learning
     type: system
-    era: '2019'
+    era: 2019
     status: active
+    descriptor: DeepMind model-based RL that learns dynamics in a latent space and plans with MCTS; mastered Go, chess, shogi, Atari without rules.
+    anchors: [DeepMind MuZero benchmarks across board and video games]
+
   - id: offline-rl
     name: Offline Reinforcement Learning
+    aliases: [Batch RL]
     branch: reinforcement-learning
     type: framework
     era: 2019-present
     status: emerging
     descriptor: Learning policies from fixed datasets without further environment interaction; key challenge is distributional shift.
-    aliases:
-      - Batch RL
+    anchors:
+      [
+        healthcare policy learning research,
+        recommendation systems from logged data,
+      ]
+
   - id: inverse-rl
     name: Inverse Reinforcement Learning
+    aliases: [IRL]
     branch: reinforcement-learning
     type: framework
     era: 2000-present
     status: active
     descriptor: Inferring a reward function from observed expert behavior; precursor to imitation learning.
-    aliases:
-      - IRL
+    anchors:
+      [autonomous-driving behavior modeling, robot learning from demonstration]
+
   - id: multi-agent-rl
     name: Multi-Agent Reinforcement Learning
+    aliases: [MARL]
     branch: reinforcement-learning
     type: framework
     era: 1990s-present
     status: active
-    aliases:
-      - MARL
+    descriptor: RL with multiple interacting agents; cooperative, competitive, or mixed settings.
+    anchors:
+      [
+        DeepMind AlphaStar StarCraft II,
+        OpenAI Five Dota 2,
+        traffic-signal control research,
+      ]
+
   - id: bandits
     name: Multi-Armed Bandits
     branch: reinforcement-learning
     type: framework
     era: 1933-present
     status: foundational
+    descriptor: Sequential decision problems balancing exploration and exploitation without state; UCB, Thompson sampling.
+    anchors:
+      [
+        online A/B testing platforms,
+        news-feed ranking,
+        ad selection,
+        clinical trial allocation,
+      ]
+
   - id: alphago
     name: AlphaGo
     branch: reinforcement-learning
     type: system
-    era: '2016'
+    era: 2016
     status: legacy
     descriptor: DeepMind system combining policy and value networks with MCTS; defeated Lee Sedol 4-1 in 2016.
+    anchors: [DeepMind AlphaGo Lee Sedol match Seoul 2016]
+
   - id: alphazero
     name: AlphaZero
     branch: reinforcement-learning
     type: system
-    era: '2017'
+    era: 2017
     status: active
+    descriptor: DeepMind general game-playing system learning Go, chess, and shogi from self-play using only the rules.
+    anchors:
+      [
+        DeepMind AlphaZero 2017 paper,
+        basis for Leela Chess Zero open-source engine,
+      ]
+
   - id: rlhf
     name: Reinforcement Learning from Human Feedback
+    aliases: [RLHF]
     branch: reinforcement-learning
     type: method
     era: 2017-present
     status: active
     descriptor: Fine-tuning models by training a reward model from human preference comparisons and optimizing via PPO or similar.
-    aliases:
-      - RLHF
+    anchors: [InstructGPT, ChatGPT, Claude, Gemini post-training]
+
+  # ==================== HYBRID / NEUROSYMBOLIC / AGENTIC ====================
+
   - id: hybrid-neurosymbolic
     name: Hybrid / Neurosymbolic / Agentic AI
     branch: hybrid-neurosymbolic
     type: framework
     era: 2010s-present
     status: emerging
+    descriptor: Integration of neural learning with symbolic reasoning, tool use, and planning.
+    anchors:
+      [LLM agent frameworks, neurosymbolic research programs at DARPA, IBM, MIT]
+
   - id: neurosymbolic-integration
     name: Neurosymbolic Integration
     branch: hybrid-neurosymbolic
@@ -820,65 +1188,107 @@ nodes:
     era: 1990s-present
     status: emerging
     descriptor: Architectures combining neural perception with symbolic representation and inference.
+    anchors: [DeepProbLog, Logic Tensor Networks, IBM Neurosymbolic AI research]
+
   - id: differentiable-programming
     name: Differentiable Programming
     branch: hybrid-neurosymbolic
     type: framework
     era: 2018-present
     status: active
+    descriptor: Programs whose components are differentiable, enabling gradient-based learning of arbitrary computations.
+    anchors:
+      [JAX ecosystem, neural differential equations, physics-informed networks]
+
   - id: program-synthesis
     name: Program Synthesis
     branch: hybrid-neurosymbolic
     type: framework
     era: 1960s-present
     status: active
+    descriptor: Automatically generating programs from specifications, examples, or natural language.
+    anchors: [Microsoft FlashFill in Excel, GitHub Copilot, DreamCoder]
+
   - id: rag
     name: Retrieval-Augmented Generation
+    aliases: [RAG]
     branch: hybrid-neurosymbolic
     type: method
     era: 2020-present
     status: active
     descriptor: Combining a retrieval index with a generative model so outputs are grounded in retrieved passages.
-    aliases:
-      - RAG
+    anchors: [Perplexity, enterprise document QA systems, Notion AI Q&A]
+
   - id: tool-use-agents
     name: Tool-Use Agents
+    aliases: [LLM Agents]
     branch: hybrid-neurosymbolic
     type: framework
     era: 2023-present
     status: emerging
-    aliases:
-      - LLM Agents
+    descriptor: LLMs orchestrating external tools (search, code execution, APIs) via structured calls.
+    anchors:
+      [
+        Claude Code,
+        ChatGPT plugins/tools,
+        LangChain agents,
+        Cursor,
+        MCP ecosystem,
+      ]
+
   - id: decision-theory
     name: Decision Theory
     branch: hybrid-neurosymbolic
     type: framework
     era: 1940s-present
     status: foundational
+    descriptor: Mathematical study of rational choice under uncertainty; expected utility, Bayes-optimal decisions.
+    anchors: [actuarial science, operations research, foundation of RL]
+
   - id: game-theory
     name: Game Theory
     branch: hybrid-neurosymbolic
     type: framework
     era: 1944-present
     status: foundational
+    descriptor: Mathematical analysis of strategic interaction; equilibria, mechanism design, coalitional games.
+    anchors:
+      [
+        auction design at Google and Facebook,
+        poker AI Libratus and Pluribus,
+        multi-agent RL,
+      ]
+
+  # ==================== SUBSTRATE: STATISTICS ====================
+
   - id: substrate-statistics
     name: Statistics
     branch: substrate-statistics
     type: framework
     era: 1700s-present
     status: foundational
+    descriptor: The mathematical study of data, inference, and uncertainty; substrate underlying all of ML.
+    anchors: [every empirical science, every ML system implicitly]
+
   - id: frequentist-stats
     name: Frequentist Statistics
     branch: substrate-statistics
     type: framework
     era: 1900s-present
     status: foundational
+    descriptor: Inference based on long-run sampling frequencies; p-values, confidence intervals, hypothesis tests.
+    anchors:
+      [clinical trial reporting, A/B test analysis at all major tech companies]
+
   - id: hypothesis-testing
     name: Statistical Hypothesis Testing
     branch: substrate-statistics
     type: method
     era: 1900s-present
     status: foundational
+    descriptor: Decision framework for evaluating claims against data; null and alternative hypotheses, type I/II errors.
+    anchors: [drug-approval RCT analysis, online experimentation platforms]
+
   - id: bayesian-stats
     name: Bayesian Statistics
     branch: substrate-statistics
@@ -886,6 +1296,8 @@ nodes:
     era: 1763-present
     status: foundational
     descriptor: Inference treating parameters as random variables; updating priors via likelihood to posteriors.
+    anchors: [adaptive clinical trials, Stan, PyMC, NumPyro]
+
   - id: causal-inference
     name: Causal Inference
     branch: substrate-statistics
@@ -893,6 +1305,9 @@ nodes:
     era: 1920s-present
     status: active
     descriptor: Estimating causal effects from observational and experimental data; counterfactual reasoning.
+    anchors:
+      [econometrics policy evaluation, epidemiology, Pearl and Rubin frameworks]
+
   - id: do-calculus
     name: do-Calculus
     branch: substrate-statistics
@@ -900,47 +1315,78 @@ nodes:
     era: 1995-present
     status: active
     descriptor: Pearl's symbolic calculus for inferring causal effects from DAGs and interventions.
+    anchors: [Judea Pearl's Causality, modern epidemiology curricula]
+
   - id: instrumental-variables
     name: Instrumental Variables
+    aliases: [IV]
     branch: substrate-statistics
     type: method
     era: 1928-present
     status: foundational
     descriptor: Identifying causal effects via variables that affect treatment but not outcome directly.
-    aliases:
-      - IV
+    anchors:
+      [labor economics returns-to-education studies, Mendelian randomization]
+
   - id: did-rdd
     name: Difference-in-Differences and Regression Discontinuity
+    aliases: [DiD, RDD]
     branch: substrate-statistics
     type: method
     era: 1985-present
     status: active
     descriptor: Quasi-experimental designs identifying effects from policy changes and threshold-based assignment.
+    anchors:
+      [
+        minimum-wage employment effect studies,
+        education and health policy evaluation,
+      ]
+
   - id: propensity-score
     name: Propensity Score Methods
     branch: substrate-statistics
     type: method
-    era: '1983'
+    era: 1983
     status: active
     descriptor: Balancing treated and control groups on the conditional probability of treatment to reduce confounding.
+    anchors:
+      [observational health-effect studies, A/B test re-weighting in marketing]
+
   - id: experimental-design
     name: Experimental Design
     branch: substrate-statistics
     type: framework
     era: 1920s-present
     status: foundational
+    descriptor: Principled construction of experiments; randomization, blocking, factorial designs, power analysis.
+    anchors:
+      [Fisher's agricultural trials, RCTs in medicine, factorial A/B/n at scale]
+
   - id: robust-stats
     name: Robust and Nonparametric Statistics
     branch: substrate-statistics
     type: framework
     era: 1960s-present
     status: foundational
+    descriptor: Methods less sensitive to distributional assumptions and outliers; rank tests, M-estimators, bootstrap.
+    anchors:
+      [
+        bootstrap confidence intervals,
+        Wilcoxon and Mann-Whitney tests in biostatistics,
+      ]
+
   - id: statistical-learning-theory
     name: Statistical Learning Theory
     branch: substrate-statistics
     type: framework
     era: 1970s-present
     status: foundational
+    descriptor: Theoretical study of generalization in learning; VC dimension, PAC learning, Rademacher complexity.
+    anchors:
+      [Vapnik-Chervonenkis theory, foundation of SVMs and generalization bounds]
+
+  # ==================== SUBSTRATE: OPTIMIZATION ====================
+
   - id: substrate-optimization
     name: Mathematical Optimization
     branch: substrate-optimization
@@ -948,6 +1394,12 @@ nodes:
     era: 1940s-present
     status: foundational
     descriptor: Finding inputs that minimize or maximize an objective subject to constraints; the engine of all ML training.
+    anchors:
+      [
+        every gradient step in every neural network,
+        operations research at scale,
+      ]
+
   - id: convex-optimization
     name: Convex Optimization
     branch: substrate-optimization
@@ -955,112 +1407,167 @@ nodes:
     era: 1950s-present
     status: foundational
     descriptor: Optimization of convex objectives over convex sets; global optimality is guaranteed.
+    anchors:
+      [
+        Lasso and Ridge regression,
+        portfolio optimization,
+        control system design,
+      ]
+
   - id: linear-programming
     name: Linear Programming
+    aliases: [LP]
     branch: substrate-optimization
     type: framework
-    era: '1947'
+    era: 1947
     status: foundational
     descriptor: Optimization of a linear objective over linear constraints; solved by simplex or interior-point.
-    aliases:
-      - LP
+    anchors:
+      [airline fleet scheduling, refinery blending, supply-chain logistics]
+
   - id: integer-programming
     name: Integer Programming
+    aliases: [IP, MILP]
     branch: substrate-optimization
     type: framework
     era: 1958-present
     status: active
     descriptor: LP with integer variables; NP-hard but practically solved by branch-and-bound at industrial scale.
+    anchors: [Gurobi and CPLEX in logistics, crew scheduling, network design]
+
   - id: sgd
     name: Stochastic Gradient Descent
+    aliases: [SGD]
     branch: substrate-optimization
     type: algorithm
-    era: '1951'
+    era: 1951
     status: foundational
     descriptor: Iterative optimization using gradient estimates from random samples; backbone of neural network training.
-    aliases:
-      - SGD
+    anchors: [every deep-learning framework default, Robbins-Monro 1951]
+
   - id: adam
     name: Adam Optimizer
     branch: substrate-optimization
     type: algorithm
-    era: '2014'
+    era: 2014
     status: active
     descriptor: Adaptive gradient method combining momentum with per-parameter learning rates from second-moment estimates.
+    anchors:
+      [
+        default optimizer in PyTorch and JAX,
+        vast majority of modern deep-learning training,
+      ]
+
   - id: genetic-algorithms
     name: Genetic Algorithms
+    aliases: [GA]
     branch: substrate-optimization
     type: algorithm
     era: 1960s-1970s
     status: active
-    aliases:
-      - GA
+    descriptor: Population-based search using selection, crossover, and mutation inspired by biological evolution.
+    anchors:
+      [
+        NASA evolved-antenna design for ST5 satellite 2006,
+        scheduling heuristics,
+      ]
+
   - id: genetic-programming
     name: Genetic Programming
+    aliases: [GP]
     branch: substrate-optimization
     type: framework
-    era: '1992'
+    era: 1992
     status: active
     descriptor: Evolutionary search over program trees; symbolic regression and automated invention.
-    aliases:
-      - GP
+    anchors: [symbolic-regression discoveries in physics and engineering]
+
   - id: evolutionary-strategies
     name: Evolutionary Strategies
+    aliases: [ES]
     branch: substrate-optimization
     type: algorithm
     era: 1960s-present
     status: active
     descriptor: Gradient-free continuous optimization via mutation and selection over parameter vectors.
-    aliases:
-      - ES
+    anchors:
+      [
+        OpenAI ES paper 2017 scaling to RL,
+        CMA-ES in continuous black-box optimization,
+      ]
+
   - id: simulated-annealing
     name: Simulated Annealing
+    aliases: [SA]
     branch: substrate-optimization
     type: algorithm
-    era: '1983'
+    era: 1983
     status: active
     descriptor: Stochastic local search accepting worse moves with a temperature-decreasing probability.
-    aliases:
-      - SA
+    anchors: [VLSI chip placement and routing, TSP heuristics]
+
   - id: bayesian-optimization
     name: Bayesian Optimization
+    aliases: [BO]
     branch: substrate-optimization
     type: framework
     era: 1990s-present
     status: active
     descriptor: Sample-efficient global optimization of expensive black-box functions using a probabilistic surrogate.
-    aliases:
-      - BO
+    anchors:
+      [
+        neural-network hyperparameter tuning (Google Vizier),
+        experimental design in chemistry,
+      ]
+
   - id: swarm-intelligence
     name: Swarm Intelligence
     branch: substrate-optimization
     type: framework
     era: 1990s-present
     status: active
+    descriptor: Optimization inspired by decentralized collective behavior; PSO, ACO, bee algorithms.
+    anchors:
+      [routing in telecommunication networks, multi-robot coordination research]
+
+  # ==================== SUBSTRATE: INFORMATION THEORY ====================
+
   - id: substrate-information-theory
     name: Information Theory
     branch: substrate-information-theory
     type: framework
-    era: '1948'
+    era: 1948
     status: foundational
+    descriptor: Shannon's mathematical theory of communication; quantifies information, redundancy, channel capacity.
+    anchors:
+      [foundation of all data compression and channel coding, ML loss functions]
+
   - id: entropy
     name: Entropy
+    aliases: [Shannon Entropy]
     branch: substrate-information-theory
     type: math-construct
-    era: '1948'
+    era: 1948
     status: foundational
     descriptor: Measure of uncertainty or information content of a random variable.
-    aliases:
-      - Shannon Entropy
+    anchors:
+      [decision tree split criteria, cross-entropy loss in classification]
+
   - id: mutual-information
     name: Mutual Information
+    aliases: [MI]
     branch: substrate-information-theory
     type: math-construct
-    era: '1948'
+    era: 1948
     status: foundational
     descriptor: Measure of statistical dependence between two variables; reduction in uncertainty about one given the other.
-    aliases:
-      - MI
+    anchors:
+      [
+        feature selection,
+        representation learning objectives,
+        neuroscience analyses,
+      ]
+
   - id: coding-theory
     name: Coding Theory
     branch: substrate-information-theory
@@ -1068,13 +1575,25 @@ nodes:
     era: 1948-present
     status: foundational
     descriptor: Design of source and channel codes for reliable and efficient communication.
+    anchors:
+      [
+        Huffman coding in zip and JPEG,
+        error-correcting codes in storage and wireless,
+      ]
+
   - id: kl-divergence
     name: Kullback-Leibler Divergence
+    aliases: [KL Divergence, Relative Entropy]
     branch: substrate-information-theory
     type: math-construct
-    era: '1951'
+    era: 1951
     status: foundational
     descriptor: Asymmetric measure of difference between two probability distributions.
+    anchors:
+      [variational inference objectives, model regularization in RLHF and VAEs]
+
+  # ==================== SUBSTRATE: SIGNAL PROCESSING / CLASSICAL PR ====================
+
   - id: substrate-signal-processing
     name: Signal Processing and Classical Pattern Recognition
     branch: substrate-signal-processing
@@ -1082,15 +1601,18 @@ nodes:
     era: 1950s-present
     status: foundational
     descriptor: Mathematical transformation and analysis of signals; pre-deep-learning perception backbone.
+    anchors: [audio, image, biomedical signal pipelines]
+
   - id: fourier-transform
     name: Fourier Transform
+    aliases: [FFT]
     branch: substrate-signal-processing
     type: math-construct
-    era: '1822'
+    era: 1822
     status: foundational
     descriptor: Decomposition of signals into frequency components; FFT enables practical computation.
-    aliases:
-      - FFT
+    anchors: [audio analysis, image compression JPEG, MRI reconstruction]
+
   - id: wavelets
     name: Wavelet Transforms
     branch: substrate-signal-processing
@@ -1098,67 +1620,121 @@ nodes:
     era: 1980s
     status: active
     descriptor: Multi-resolution analysis with localized basis functions; better time-frequency tradeoff than Fourier.
+    anchors:
+      [
+        JPEG 2000 image compression,
+        biomedical signal analysis,
+        fingerprint compression,
+      ]
+
   - id: mfcc
     name: Mel-Frequency Cepstral Coefficients
+    aliases: [MFCC]
     branch: substrate-signal-processing
     type: method
-    era: '1980'
+    era: 1980
     status: legacy
     descriptor: Compact representation of audio spectrum using perceptual mel scale and cepstral analysis.
-    aliases:
-      - MFCC
+    anchors:
+      [
+        pre-deep-learning speech recognition feature extraction,
+        speaker recognition systems,
+      ]
+
   - id: sift-hog
     name: SIFT and HOG Descriptors
+    aliases:
+      [Scale-Invariant Feature Transform, Histogram of Oriented Gradients]
     branch: substrate-signal-processing
     type: method
     era: 1999-2005
     status: legacy
     descriptor: Hand-crafted local image descriptors for matching and detection; dominant CV features before CNNs.
+    anchors:
+      [
+        image stitching in panorama tools,
+        pedestrian detection pre-2012,
+        image retrieval,
+      ]
+
   - id: viola-jones
     name: Viola-Jones Object Detector
     branch: substrate-signal-processing
     type: algorithm
-    era: '2001'
+    era: 2001
     status: legacy
+    descriptor: Real-time face detector using Haar-like features, integral images, and AdaBoost cascades.
+    anchors:
+      [
+        face detection in digital cameras and webcams 2003-2015,
+        OpenCV default face detector,
+      ]
+
   - id: spectrogram-fingerprinting
     name: Spectrogram Peak Fingerprinting
     branch: substrate-signal-processing
     type: algorithm
-    era: '2003'
+    era: 2003
     status: active
     descriptor: Audio identification by hashing constellations of spectrogram peaks; Wang 2003 algorithm.
+    anchors: [Shazam song identification, audio content fingerprinting]
+
+  # ==================== INFORMATION RETRIEVAL / RECOMMENDERS ====================
+
   - id: ir-recommenders
     name: Information Retrieval and Recommender Systems
+    aliases: [IR]
     branch: information-retrieval-recommenders
     type: framework
     era: 1960s-present
     status: active
     descriptor: Methods for finding relevant items in large collections; the most-used AI most laypeople never named.
-    aliases:
-      - IR
+    anchors:
+      [
+        every search engine,
+        every recommendation feed,
+        every shopping suggestion,
+      ]
+
   - id: tf-idf
     name: TF-IDF
+    aliases: [Term Frequency-Inverse Document Frequency]
     branch: information-retrieval-recommenders
     type: method
-    era: '1972'
+    era: 1972
     status: foundational
     descriptor: Term weighting balancing local frequency against corpus rarity; foundational IR feature.
-    aliases:
-      - Term Frequency-Inverse Document Frequency
+    anchors:
+      [
+        classic search engines,
+        text-classification baselines,
+        sklearn TfidfVectorizer,
+      ]
+
   - id: bm25
     name: BM25
+    aliases: [Best Matching 25, Okapi BM25]
     branch: information-retrieval-recommenders
     type: algorithm
-    era: '1994'
+    era: 1994
     status: active
     descriptor: Probabilistic ranking function with term saturation and length normalization.
+    anchors:
+      [
+        Elasticsearch default scoring,
+        Lucene/Solr,
+        hybrid retrieval with neural rerankers,
+      ]
+
   - id: pagerank
     name: PageRank
     branch: information-retrieval-recommenders
     type: algorithm
-    era: '1996'
+    era: 1996
     status: legacy
     descriptor: Random-walk-based ranking of web pages by link structure; Brin and Page's original Google algorithm.
+    anchors: [original Google Search ranking, network-centrality analysis]
+
   - id: collaborative-filtering
     name: Collaborative Filtering
     branch: information-retrieval-recommenders
@@ -1166,29 +1742,48 @@ nodes:
     era: 1992-present
     status: active
     descriptor: Recommendation by leveraging patterns in user-item interaction matrices; user-user and item-item.
+    anchors:
+      [Amazon "customers who bought this also bought", Netflix recommendations]
+
   - id: matrix-factorization
     name: Matrix Factorization for Recommenders
+    aliases: [SVD++]
     branch: information-retrieval-recommenders
     type: algorithm
-    era: '2007'
+    era: 2007
     status: active
     descriptor: Low-rank factorization of the rating matrix into user and item latent factors.
-    aliases:
-      - SVD++
+    anchors:
+      [Netflix Prize winning solution 2009, production recommendation systems]
+
   - id: learning-to-rank
     name: Learning to Rank
+    aliases: [LTR]
     branch: information-retrieval-recommenders
     type: framework
     era: 2005-present
     status: active
-    aliases:
-      - LTR
+    descriptor: Supervised learning of ranking functions optimizing IR metrics; pointwise, pairwise, listwise.
+    anchors: [Bing and Yahoo search ranking, LambdaMART production deployments]
+
   - id: ann-indexes
     name: Approximate Nearest Neighbor Indexes
+    aliases: [ANN, HNSW, IVF, PQ]
     branch: information-retrieval-recommenders
     type: algorithm
     era: 2010s-present
     status: active
+    descriptor: Sub-linear nearest-neighbor search in high dimensions via graphs, inverted files, product quantization.
+    anchors:
+      [
+        FAISS,
+        Annoy,
+        ScaNN,
+        vector databases Pinecone/Weaviate/Qdrant powering RAG,
+      ]
+
+  # ==================== CROSS-CUTTING ====================
+
   - id: transfer-learning
     name: Transfer Learning
     branch: cross-cutting
@@ -1196,12 +1791,25 @@ nodes:
     era: 1990s-present
     status: active
     descriptor: Reusing knowledge from one task or domain to improve learning on another.
+    anchors:
+      [
+        ImageNet-pretrained CNNs for medical imaging,
+        foundation-model fine-tuning,
+      ]
+
   - id: federated-learning
     name: Federated Learning
     branch: cross-cutting
     type: framework
-    era: '2016'
+    era: 2016
     status: active
+    descriptor: Decentralized training across devices that share gradient updates, not raw data; privacy-preserving by design.
+    anchors:
+      [
+        Google Gboard next-word prediction on phones,
+        Apple on-device intelligence,
+      ]
+
   - id: active-learning
     name: Active Learning
     branch: cross-cutting
@@ -1209,29 +1817,44 @@ nodes:
     era: 1990s-present
     status: active
     descriptor: Selecting which examples to label to maximize learning per annotation effort.
+    anchors:
+      [Scale AI / Snorkel annotation pipelines, drug-discovery active screening]
+
   - id: meta-learning
     name: Meta-Learning
+    aliases: [Learning to Learn]
     branch: cross-cutting
     type: framework
     era: 2010s-present
     status: active
     descriptor: Learning algorithms or initializations that adapt quickly to new tasks; few-shot learning is a downstream goal.
-    aliases:
-      - Learning to Learn
+    anchors: [MAML and Reptile research, automated machine learning systems]
+
   - id: ensemble-methods
     name: Ensemble Methods
     branch: cross-cutting
     type: framework
     era: 1990s-present
     status: foundational
+    descriptor: Combining multiple models to reduce variance, bias, or both; bagging, boosting, stacking.
+    anchors:
+      [Netflix Prize winning blend, virtually every Kaggle top-3 solution]
+
   - id: slam
     name: Simultaneous Localization and Mapping
+    aliases: [SLAM]
     branch: cross-cutting
     type: framework
     era: 1990s-present
     status: active
-    aliases:
-      - SLAM
+    descriptor: Joint estimation of robot pose and environment map; combines Kalman/particle filtering, optimization, and CV.
+    anchors:
+      [
+        ARKit and ARCore augmented reality,
+        autonomous vehicles,
+        robot vacuum mapping,
+      ]
+
   - id: speech-recognition-hmm-era
     name: HMM-GMM Speech Recognition
     branch: cross-cutting
@@ -1239,3 +1862,9 @@ nodes:
     era: 1980s-2010s
     status: legacy
     descriptor: Decades-long dominant ASR architecture using GMM acoustic models with HMM state sequences before deep learning.
+    anchors:
+      [
+        Nuance Dragon NaturallySpeaking,
+        pre-2012 voicemail transcription,
+        early Siri 2011,
+      ]

@@ -196,19 +196,102 @@ export class MockConnection {
 
   private parseNodeObject(jsonStr: string): any {
     // Parse a JavaScript object literal (not valid JSON) into a JS object
-    // This handles things like: { id: "value", aliases: [], key: null }
+    // Handles nested structures like arrays and strings with special characters
     const obj: any = {};
 
-    // Extract key-value pairs
-    const keyValuePattern = /(\w+)\s*:\s*([^,]*?)(?=,\s*\w+\s*:|$)/gs;
-    let match;
+    // Skip opening brace if present
+    let i = jsonStr.indexOf('{');
+    if (i >= 0) {
+      i++; // Skip the opening brace
+    } else {
+      i = 0;
+    }
 
-    while ((match = keyValuePattern.exec(jsonStr)) !== null) {
-      const key = match[1].trim();
-      let value = match[2].trim();
+    while (i < jsonStr.length) {
+      // Find key
+      const keyMatch = jsonStr.slice(i).match(/^\s*(\w+)\s*:/);
+      if (!keyMatch) break;
 
-      // Remove trailing comma and whitespace
-      value = value.replace(/,?\s*$/, '').trim();
+      const key = keyMatch[1];
+      i += keyMatch[0].length;
+
+      // Find value (handles nested structures)
+      let value = '';
+      let depth = 0;
+      let inString = false;
+      let escapeNext = false;
+
+      while (i < jsonStr.length) {
+        const char = jsonStr[i];
+
+        if (escapeNext) {
+          value += char;
+          escapeNext = false;
+          i++;
+          continue;
+        }
+
+        if (char === '\\' && inString) {
+          escapeNext = true;
+          value += char;
+          i++;
+          continue;
+        }
+
+        if (char === '"') {
+          inString = !inString;
+          value += char;
+          i++;
+          continue;
+        }
+
+        if (inString) {
+          value += char;
+          i++;
+          continue;
+        }
+
+        // Not in string
+        if (char === '[' || char === '{') {
+          depth++;
+          value += char;
+          i++;
+          continue;
+        }
+
+        if (char === ']' || char === '}') {
+          depth--;
+          value += char;
+          i++;
+          continue;
+        }
+
+        if (char === ',' && depth === 0) {
+          // End of value
+          i++;
+          break;
+        }
+
+        if ((char === ' ' || char === '\n' || char === '\r' || char === '\t') && depth === 0 && value.trim().length > 0) {
+          // Skip whitespace after value but before comma
+          i++;
+          // Check if next non-whitespace is comma or closing brace
+          while (i < jsonStr.length && /\s/.test(jsonStr[i])) {
+            i++;
+          }
+          if (i >= jsonStr.length || jsonStr[i] === ',' || jsonStr[i] === '}') {
+            break;
+          }
+          // Not end of value, continue
+          value += char;
+          continue;
+        }
+
+        value += char;
+        i++;
+      }
+
+      value = value.trim();
 
       // Parse the value
       try {
@@ -246,16 +329,99 @@ export class MockConnection {
     // Similar to parseNodeObject, parse edge properties
     const obj: any = {};
 
-    // Extract key-value pairs
-    const keyValuePattern = /(\w+)\s*:\s*([^,]*?)(?=,\s*\w+\s*:|$)/gs;
-    let match;
+    // Skip opening brace if present
+    let i = jsonStr.indexOf('{');
+    if (i >= 0) {
+      i++; // Skip the opening brace
+    } else {
+      i = 0;
+    }
 
-    while ((match = keyValuePattern.exec(jsonStr)) !== null) {
-      const key = match[1].trim();
-      let value = match[2].trim();
+    while (i < jsonStr.length) {
+      // Find key
+      const keyMatch = jsonStr.slice(i).match(/^\s*(\w+)\s*:/);
+      if (!keyMatch) break;
 
-      // Remove trailing comma and whitespace
-      value = value.replace(/,?\s*$/, '').trim();
+      const key = keyMatch[1];
+      i += keyMatch[0].length;
+
+      // Find value (handles nested structures)
+      let value = '';
+      let depth = 0;
+      let inString = false;
+      let escapeNext = false;
+
+      while (i < jsonStr.length) {
+        const char = jsonStr[i];
+
+        if (escapeNext) {
+          value += char;
+          escapeNext = false;
+          i++;
+          continue;
+        }
+
+        if (char === '\\' && inString) {
+          escapeNext = true;
+          value += char;
+          i++;
+          continue;
+        }
+
+        if (char === '"') {
+          inString = !inString;
+          value += char;
+          i++;
+          continue;
+        }
+
+        if (inString) {
+          value += char;
+          i++;
+          continue;
+        }
+
+        // Not in string
+        if (char === '[' || char === '{') {
+          depth++;
+          value += char;
+          i++;
+          continue;
+        }
+
+        if (char === ']' || char === '}') {
+          depth--;
+          value += char;
+          i++;
+          continue;
+        }
+
+        if (char === ',' && depth === 0) {
+          // End of value
+          i++;
+          break;
+        }
+
+        if ((char === ' ' || char === '\n' || char === '\r' || char === '\t') && depth === 0 && value.trim().length > 0) {
+          // Skip whitespace after value but before comma
+          i++;
+          // Check if next non-whitespace is comma or closing brace
+          while (i < jsonStr.length && /\s/.test(jsonStr[i])) {
+            i++;
+          }
+          if (i >= jsonStr.length || jsonStr[i] === ',' || jsonStr[i] === '}') {
+            break;
+          }
+          // Not end of value, continue
+          value += char;
+          continue;
+        }
+
+        value += char;
+        i++;
+      }
+
+      value = value.trim();
 
       // Parse the value
       try {
