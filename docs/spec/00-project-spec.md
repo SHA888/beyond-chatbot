@@ -218,19 +218,21 @@ Six relationship types, immutable. No new types without spec revision.
 
 **Use case:** Enables external tooling to update the graph programmatically while maintaining YAML as the human-facing source.
 
-### 4.4 Build: npm run build
+### 4.4 Build: pnpm run build
 
-**Command:** `npm run build`
+**Command:** `pnpm run build`
 
 **Steps:**
 1. Validate YAML syntax.
-2. Run import-yaml.js (YAML → Kùzu).
-3. Run export-json.js (Kùzu → JSON).
+2. Run import-yaml.js (YAML → LadybugDB).
+3. Run export-json.js (LadybugDB → JSON).
 4. Emit `dist/data/graph.json`.
 
 **Performance target:** <30 seconds on M-class laptop from clean checkout.
 
-**Artifact:** `dist/data/graph.json` is the only artifact committed or deployed. The `.kùzu/` directory is transient and gitignored.
+**Artifact:** `dist/data/graph.json` is the only artifact committed or deployed. The `.ladybugdb/` directory is transient and gitignored.
+
+**Package manager:** pnpm is the project standard (enforced via `.npmrc`; Node.js ≥14.15.0 required for LadybugDB bindings).
 
 ---
 
