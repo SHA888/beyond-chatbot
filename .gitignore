@@ -5,6 +5,12 @@ CLAUDE.md
 Plans.md
 out/
 
+# Build artifacts and dependencies
+node_modules/
+pnpm-lock.yaml
+.ladybugdb/
+dist/
+
 # OS / editor cruft
 .DS_Store
 Thumbs.db
