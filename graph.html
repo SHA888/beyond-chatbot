@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>beyond-chatbot — knowledge graph</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0e0e10;
+    color: #e8e8ea;
+  }
+  #app { display: grid; grid-template-columns: 260px 1fr 320px; height: 100vh; }
+  aside { padding: 16px; overflow-y: auto; }
+  #sidebar { background: #18181b; border-right: 1px solid #2a2a2e; }
+  #detail { background: #18181b; border-left: 1px solid #2a2a2e; }
+  #cy { background: #0e0e10; min-width: 0; }
+  h1 { font-size: 16px; font-weight: 600; margin: 0 0 12px; color: #fff; }
+  h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #8a8a90; margin: 20px 0 8px; font-weight: 600; }
+  label { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 13px; cursor: pointer; user-select: none; }
+  label input { margin: 0; cursor: pointer; }
+  .branch-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  input[type="search"], select {
+    width: 100%; background: #0e0e10; color: #e8e8ea;
+    border: 1px solid #2a2a2e; border-radius: 4px; padding: 6px 8px; font-size: 13px;
+  }
+  input[type="search"]:focus, select:focus { outline: none; border-color: #4a5568; }
+  .detail-field { margin-bottom: 14px; }
+  .detail-label { font-size: 10px; text-transform: uppercase; color: #8a8a90; letter-spacing: 0.08em; margin-bottom: 4px; font-weight: 600; }
+  .detail-value { font-size: 13px; line-height: 1.5; }
+  .detail-name { font-size: 18px; font-weight: 600; margin-bottom: 4px; color: #fff; }
+  .detail-id { font-size: 11px; color: #8a8a90; font-family: ui-monospace, "SF Mono", Menlo, monospace; margin-bottom: 12px; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; background: #2a2a2e; margin: 0 4px 4px 0; }
+  .anchor { padding: 3px 0; font-size: 12px; }
+  .anchor::before { content: "◆ "; color: #8a8a90; }
+  .empty-detail { color: #6a6a70; font-style: italic; font-size: 13px; }
+  .counts { font-size: 11px; color: #8a8a90; margin-top: 16px; padding-top: 12px; border-top: 1px solid #2a2a2e; }
+  .loading, .error { padding: 40px; text-align: center; color: #8a8a90; font-size: 13px; line-height: 1.6; }
+  .error code { background: #2a2a2e; padding: 1px 6px; border-radius: 3px; color: #e8e8ea; }
+  .legend-actions { display: flex; gap: 6px; margin-bottom: 8px; }
+  .legend-actions button {
+    flex: 1; background: #2a2a2e; color: #e8e8ea; border: none;
+    padding: 4px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;
+  }
+  .legend-actions button:hover { background: #3a3a3e; }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <h1>beyond-chatbot</h1>
+    <input type="search" id="search" placeholder="search nodes…" autocomplete="off">
+
+    <h2>Layout</h2>
+    <select id="layout">
+      <option value="branches" selected>Branch sections</option>
+      <option value="cose">Force-directed</option>
+      <option value="concentric">Concentric (by era)</option>
+      <option value="grid">Grid (raw)</option>
+      <option value="circle">Circle</option>
+    </select>
+
+    <h2>Filter by branch</h2>
+    <div class="legend-actions">
+      <button id="all-on">All</button>
+      <button id="all-off">None</button>
+    </div>
+    <div id="branch-filters"></div>
+
+    <div class="counts" id="counts"></div>
+  </aside>
+
+  <div id="cy"><div class="loading">Loading nodes…</div></div>
+
+  <aside id="detail">
+    <h1>Inspector</h1>
+    <div id="detail-body" class="empty-detail">Click a node to inspect its descriptor and anchors.</div>
+  </aside>
+</div>
+
+<script src="https://unpkg.com/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+<script src="https://unpkg.com/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+<script>
+(async function () {
+  const BRANCH_COLORS = {
+    "symbolic-gofai":                    "#e07a5f",
+    "classical-ml":                      "#81b29a",
+    "deep-learning":                     "#f4d35e",
+    "reinforcement-learning":            "#f48c06",
+    "hybrid-neurosymbolic":              "#c77dff",
+    "substrate-statistics":              "#90e0ef",
+    "substrate-optimization":            "#457b9d",
+    "substrate-information-theory":      "#e76f51",
+    "substrate-signal-processing":       "#52b788",
+    "information-retrieval-recommenders":"#ffd166",
+    "cross-cutting":                     "#adb5bd",
+  };
+
+  const STATUS_BORDER = {
+    "foundational": "#ffffff",
+    "active":       "#4a5568",
+    "legacy":       "#6a6a70",
+    "emerging":     "#06d6a0",
+    "dormant":      "#3a3a3e",
+  };
+
+  let nodesYaml, edgesYaml;
+  try {
+    const [nResp, eResp] = await Promise.all([
+      fetch("./ai-nodes.yaml"),
+      fetch("./ai-edges.yaml").catch(() => null),
+    ]);
+    if (!nResp.ok) throw new Error("ai-nodes.yaml: " + nResp.status);
+    nodesYaml = jsyaml.load(await nResp.text());
+    if (eResp && eResp.ok) {
+      edgesYaml = jsyaml.load(await eResp.text()) || { edges: [] };
+    } else {
+      edgesYaml = { edges: [] };
+    }
+  } catch (err) {
+    renderError(err);
+    return;
+  }
+
+  function renderError(err) {
+    const cyDiv = document.querySelector("#cy");
+    cyDiv.textContent = "";
+    const box = document.createElement("div");
+    box.className = "error";
+    box.appendChild(document.createTextNode("Failed to load YAML."));
+    box.appendChild(document.createElement("br"));
+    box.appendChild(document.createElement("br"));
+    box.appendChild(document.createTextNode("Serve over http, e.g. "));
+    const c1 = document.createElement("code");
+    c1.textContent = "python3 -m http.server";
+    box.appendChild(c1);
+    box.appendChild(document.createTextNode(" from the repo root, then open "));
+    const c2 = document.createElement("code");
+    c2.textContent = "http://localhost:8000/graph.html";
+    box.appendChild(c2);
+    box.appendChild(document.createTextNode("."));
+    box.appendChild(document.createElement("br"));
+    box.appendChild(document.createElement("br"));
+    const small = document.createElement("small");
+    small.textContent = String(err);
+    box.appendChild(small);
+    cyDiv.appendChild(box);
+  }
+
+  const nodes = nodesYaml.nodes || [];
+  const rawEdges = edgesYaml.edges || [];
+  const idSet = new Set(nodes.map(n => n.id));
+
+  const branchList = [...new Set(nodes.map(n => n.branch))].sort();
+
+  const branchParents = branchList.map(b => ({
+    data: {
+      id: "branch:" + b,
+      label: b,
+      isBranch: true,
+      color: BRANCH_COLORS[b] || "#888",
+    },
+  }));
+
+  const cyNodes = branchParents.concat(nodes.map(n => ({
+    data: {
+      id: n.id,
+      parent: "branch:" + n.branch,
+      label: n.name,
+      branch: n.branch,
+      type: n.type,
+      era: n.era,
+      status: n.status,
+      descriptor: n.descriptor,
+      anchors: n.anchors || [],
+      aliases: n.aliases || [],
+      color: BRANCH_COLORS[n.branch] || "#888",
+      border: STATUS_BORDER[n.status] || "#333",
+    },
+  })));
+
+  const cyEdges = rawEdges
+    .filter(e => {
+      const ok = idSet.has(e.source) && idSet.has(e.target);
+      if (!ok) console.warn("ai-edges.yaml: unknown id in edge", e);
+      return ok;
+    })
+    .map((e, i) => ({
+      data: {
+        id: "e" + i,
+        source: e.source,
+        target: e.target,
+        type: e.type || "related",
+        note: e.note || "",
+      },
+    }));
+
+  document.querySelector("#cy").textContent = "";
+  const cy = cytoscape({
+    container: document.querySelector("#cy"),
+    elements: { nodes: cyNodes, edges: cyEdges },
+    style: [
+      { selector: "node", style: {
+          "background-color": "data(color)",
+          "border-color": "data(border)",
+          "border-width": 1.5,
+          "label": "",
+          "color": "#e8e8ea",
+          "font-size": 10,
+          "text-valign": "bottom",
+          "text-margin-y": 4,
+          "text-outline-color": "#0e0e10",
+          "text-outline-width": 2,
+          "width": 22, "height": 22,
+      }},
+      { selector: "node:parent", style: {
+          "background-opacity": 0.04,
+          "background-color": "data(color)",
+          "border-color": "data(color)",
+          "border-opacity": 0.35,
+          "border-width": 1,
+          "shape": "round-rectangle",
+          "label": "data(label)",
+          "color": "data(color)",
+          "font-size": 13,
+          "font-weight": "bold",
+          "text-valign": "top",
+          "text-halign": "center",
+          "text-margin-y": -6,
+          "text-outline-width": 0,
+          "padding": 18,
+          "events": "no",
+      }},
+      { selector: "node.show-label", style: {
+          "label": "data(label)",
+      }},
+      { selector: "node:selected", style: {
+          "border-color": "#ffffff",
+          "border-width": 3,
+          "width": 28, "height": 28,
+          "label": "data(label)",
+          "font-size": 12,
+          "z-index": 999,
+      }},
+      { selector: "node.hover", style: {
+          "label": "data(label)",
+          "font-size": 12,
+          "z-index": 999,
+      }},
+      { selector: "node.dim", style: { "opacity": 0.12 }},
+      { selector: "edge", style: {
+          "width": 1,
+          "line-color": "#3a3a3e",
+          "target-arrow-color": "#5a5a60",
+          "target-arrow-shape": "triangle",
+          "curve-style": "bezier",
+          "label": "data(type)",
+          "font-size": 7,
+          "color": "#6a6a70",
+          "text-rotation": "autorotate",
+          "text-background-color": "#0e0e10",
+          "text-background-opacity": 1,
+          "text-background-padding": 1,
+      }},
+      { selector: "edge.dim", style: { "opacity": 0.08 }},
+      { selector: "edge:selected", style: {
+          "line-color": "#90e0ef",
+          "target-arrow-color": "#90e0ef",
+          "width": 2,
+      }},
+    ],
+    layout: layoutOpts("branches", false),
+    wheelSensitivity: 0.2,
+  });
+
+  function layoutOpts(name, animate) {
+    if (name === "branches") return branchSectionsLayout(animate);
+    const opts = { name, animate: !!animate, fit: true, padding: 30 };
+    if (name === "cose") {
+      Object.assign(opts, { nodeRepulsion: 8000, idealEdgeLength: 90 });
+    } else if (name === "concentric") {
+      opts.concentric = (n) => {
+        const m = String(n.data("era") || "").match(/(\d{4})/);
+        return m ? parseInt(m[1], 10) : 1900;
+      };
+      opts.levelWidth = () => 1;
+      opts.minNodeSpacing = 14;
+    } else if (name === "grid") {
+      opts.sort = (a, b) => (a.data("branch") || "").localeCompare(b.data("branch") || "");
+      opts.avoidOverlapPadding = 8;
+    }
+    return opts;
+  }
+
+  function branchSectionsLayout(animate) {
+    const NODE_DX = 32;
+    const NODE_DY = 32;
+    const SECTION_GAP = 90;
+    const META_COLS = 3;
+
+    const byBranch = new Map();
+    nodes.forEach(n => {
+      if (!byBranch.has(n.branch)) byBranch.set(n.branch, []);
+      byBranch.get(n.branch).push(n);
+    });
+
+    const dims = branchList.map(b => {
+      const count = byBranch.get(b).length;
+      const cols = Math.max(1, Math.ceil(Math.sqrt(count * 1.4)));
+      const rows = Math.ceil(count / cols);
+      return { branch: b, cols, rows, width: cols * NODE_DX, height: rows * NODE_DY };
+    });
+
+    const metaRows = Math.ceil(branchList.length / META_COLS);
+    const colW = new Array(META_COLS).fill(0);
+    const rowH = new Array(metaRows).fill(0);
+    dims.forEach((d, i) => {
+      const c = i % META_COLS, r = Math.floor(i / META_COLS);
+      colW[c] = Math.max(colW[c], d.width);
+      rowH[r] = Math.max(rowH[r], d.height);
+    });
+    const colX = [0];
+    for (let i = 1; i < META_COLS; i++) colX[i] = colX[i - 1] + colW[i - 1] + SECTION_GAP;
+    const rowY = [0];
+    for (let i = 1; i < metaRows; i++) rowY[i] = rowY[i - 1] + rowH[i - 1] + SECTION_GAP;
+
+    const positions = {};
+    dims.forEach((d, i) => {
+      const c = i % META_COLS, r = Math.floor(i / META_COLS);
+      const ox = colX[c], oy = rowY[r];
+      byBranch.get(d.branch).forEach((n, j) => {
+        const sc = j % d.cols, sr = Math.floor(j / d.cols);
+        positions[n.id] = { x: ox + sc * NODE_DX, y: oy + sr * NODE_DY };
+      });
+    });
+
+    return {
+      name: "preset",
+      positions: (n) => positions[n.id()] || null,
+      fit: true,
+      padding: 40,
+      animate: !!animate,
+    };
+  }
+
+  // ---- Sidebar: branch filters ----
+  const branchFilters = document.querySelector("#branch-filters");
+  const branches = [...new Set(nodes.map(n => n.branch))].sort();
+  branches.forEach(b => {
+    const lbl = document.createElement("label");
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = true;
+    input.dataset.branch = b;
+    const dot = document.createElement("span");
+    dot.className = "branch-dot";
+    dot.style.background = BRANCH_COLORS[b] || "#888";
+    const text = document.createElement("span");
+    text.textContent = b;
+    lbl.appendChild(input);
+    lbl.appendChild(dot);
+    lbl.appendChild(text);
+    branchFilters.appendChild(lbl);
+  });
+
+  function applyBranchFilter() {
+    const enabled = new Set();
+    branchFilters.querySelectorAll("input").forEach(c => {
+      if (c.checked) enabled.add(c.dataset.branch);
+    });
+    cy.batch(() => {
+      cy.nodes().forEach(n => {
+        const d = n.data();
+        const b = d.isBranch ? d.label : d.branch;
+        enabled.has(b) ? n.show() : n.hide();
+      });
+    });
+    updateCounts();
+  }
+
+  branchFilters.addEventListener("change", applyBranchFilter);
+  document.querySelector("#all-on").addEventListener("click", () => {
+    branchFilters.querySelectorAll("input").forEach(c => c.checked = true);
+    applyBranchFilter();
+  });
+  document.querySelector("#all-off").addEventListener("click", () => {
+    branchFilters.querySelectorAll("input").forEach(c => c.checked = false);
+    applyBranchFilter();
+  });
+
+  // ---- Layout switcher ----
+  document.querySelector("#layout").addEventListener("change", e => {
+    cy.layout(layoutOpts(e.target.value, true)).run();
+  });
+
+  // ---- Click handlers ----
+  cy.on("tap", "node", evt => {
+    const d = evt.target.data();
+    if (d.isBranch) return;
+    renderDetail(d);
+  });
+  cy.on("tap", evt => {
+    if (evt.target === cy) {
+      renderDetail(null);
+      cy.elements().removeClass("dim");
+      document.querySelector("#search").value = "";
+    }
+  });
+
+  // ---- Labels: hidden by default; show on hover, on selection, and when zoomed in ----
+  const LABEL_ZOOM_THRESHOLD = 0.9;
+  const conceptNodes = () => cy.nodes().filter(n => !n.data("isBranch"));
+  function syncZoomLabels() {
+    if (cy.zoom() >= LABEL_ZOOM_THRESHOLD) conceptNodes().addClass("show-label");
+    else conceptNodes().removeClass("show-label");
+  }
+  cy.on("zoom", syncZoomLabels);
+  cy.on("mouseover", "node", e => {
+    if (!e.target.data("isBranch")) e.target.addClass("hover");
+  });
+  cy.on("mouseout", "node", e => e.target.removeClass("hover"));
+  syncZoomLabels();
+
+  function renderDetail(n) {
+    const body = document.querySelector("#detail-body");
+    body.textContent = "";
+    if (!n) {
+      body.className = "empty-detail";
+      body.textContent = "Click a node to inspect its descriptor and anchors.";
+      return;
+    }
+    body.className = "";
+
+    body.appendChild(makeDiv("detail-name", n.label));
+    body.appendChild(makeDiv("detail-id", n.id));
+
+    const pills = document.createElement("div");
+    pills.className = "detail-field";
+    pills.appendChild(makePill(n.branch, n.color, "#0e0e10"));
+    pills.appendChild(makePill(n.type));
+    pills.appendChild(makePill(n.status));
+    pills.appendChild(makePill(String(n.era)));
+    body.appendChild(pills);
+
+    if (n.aliases && n.aliases.length) {
+      body.appendChild(makeField("aliases", n.aliases.join(", ")));
+    }
+    body.appendChild(makeField("descriptor", n.descriptor || ""));
+
+    const anchorsField = document.createElement("div");
+    anchorsField.className = "detail-field";
+    anchorsField.appendChild(makeDiv("detail-label", "anchors"));
+    const anchorsValue = document.createElement("div");
+    anchorsValue.className = "detail-value";
+    if (n.anchors && n.anchors.length) {
+      n.anchors.forEach(a => anchorsValue.appendChild(makeDiv("anchor", a)));
+    } else {
+      anchorsValue.appendChild(makeDiv("empty-detail", "(none)"));
+    }
+    anchorsField.appendChild(anchorsValue);
+    body.appendChild(anchorsField);
+  }
+
+  function makeDiv(cls, text) {
+    const el = document.createElement("div");
+    el.className = cls;
+    el.textContent = text;
+    return el;
+  }
+
+  function makePill(text, bg, fg) {
+    const el = document.createElement("span");
+    el.className = "pill";
+    if (bg) el.style.background = bg;
+    if (fg) el.style.color = fg;
+    el.textContent = text;
+    return el;
+  }
+
+  function makeField(labelText, valueText) {
+    const field = document.createElement("div");
+    field.className = "detail-field";
+    field.appendChild(makeDiv("detail-label", labelText));
+    field.appendChild(makeDiv("detail-value", valueText));
+    return field;
+  }
+
+  // ---- Search: dim non-matches, zoom-to small result set ----
+  document.querySelector("#search").addEventListener("input", e => {
+    const q = e.target.value.trim().toLowerCase();
+    if (!q) {
+      cy.elements().removeClass("dim");
+      return;
+    }
+    const matched = cy.nodes().filter(n => {
+      const d = n.data();
+      if (d.isBranch) return false;
+      return (d.label || "").toLowerCase().includes(q) ||
+             (d.id || "").toLowerCase().includes(q) ||
+             (d.aliases || []).some(a => a.toLowerCase().includes(q));
+    });
+    cy.batch(() => {
+      cy.elements().addClass("dim");
+      matched.removeClass("dim");
+      matched.parents().removeClass("dim");
+      matched.connectedEdges().removeClass("dim");
+    });
+    if (matched.length > 0 && matched.length < 8) cy.fit(matched, 80);
+  });
+
+  function updateCounts() {
+    const visible = cy.nodes(":visible").filter(n => !n.data("isBranch")).length;
+    document.querySelector("#counts").textContent =
+      visible + " / " + nodes.length + " nodes  ·  " + cyEdges.length + " edges";
+  }
+  updateCounts();
+})();
+</script>
+</body>
+</html>
