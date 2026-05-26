@@ -16,7 +16,8 @@
     "test:coverage": "vitest --coverage",
     "build": "pnpm compile && node dist/scripts/import-yaml.js && node dist/scripts/export-json.js",
     "import": "pnpm compile && node dist/scripts/import-yaml.js",
-    "export": "pnpm compile && node dist/scripts/export-json.js"
+    "export": "pnpm compile && node dist/scripts/export-json.js",
+    "export:yaml": "pnpm compile && node dist/scripts/export-yaml.js"
   },
   "keywords": [
     "ai",

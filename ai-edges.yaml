@@ -1,66 +1,61 @@
-# AI Taxonomy — Edge Catalog
-# Version: 0.1.0
-# Purpose: Typed relationships between nodes.
-#
-# Edges are deliberately omitted from ai-nodes.yaml so consumers can build
-# their own graph topology. This file is YOUR working canvas — the entries
-# below are illustrative starting points, not a curated topology. Delete
-# them, replace them, override them.
-#
-# Schema:
-#   source : node id (must exist in ai-nodes.yaml)
-#   target : node id (must exist in ai-nodes.yaml)
-#   type   : prerequisite | descendant-of | historical-influence | substrate-of | uses | composes
-#   weight : optional, 0.0-1.0 (default 1.0)
-#   note   : optional, one-sentence rationale
-
 edges:
-  - source: dqn
-    target: q-learning
-    type: descendant-of
-    note: DQN is the deep-network version of tabular Q-learning.
-
-  - source: alphazero
-    target: alphago
-    type: descendant-of
-    note: AlphaZero generalized AlphaGo to multiple games without human play.
-
-  - source: muzero
-    target: alphazero
-    type: descendant-of
-    note: MuZero learns the dynamics model rather than requiring known rules.
-
   - source: adam
     target: sgd
     type: descendant-of
-    note: Adam adds adaptive per-parameter learning rates on top of SGD.
-
-  - source: naive-bayes
-    target: bayesian-stats
-    type: substrate-of
-    note: Naive Bayes applies Bayes' rule under a feature-independence assumption.
-
+    notes: |-
+      "Adam adds adaptive per-parameter learning rates on top of SGD."
+                }
+  - source: alphazero
+    target: alphago
+    type: descendant-of
+    notes: |-
+      "AlphaZero generalized AlphaGo to multiple games without human play."
+                }
   - source: bayesian-networks
     target: bayesian-stats
     type: substrate-of
-    note: Bayesian networks encode joint distributions via DAG factorization.
-
-  - source: rlhf
-    target: ppo
-    type: uses
-    note: Standard RLHF pipelines use PPO to optimize against a reward model.
-
-  - source: propensity-score
-    target: causal-inference
-    type: composes
-    note: Propensity-score methods are a workhorse of observational causal inference.
-
+    notes: |-
+      "Bayesian networks encode joint distributions via DAG factorization."
+                }
   - source: do-calculus
     target: causal-inference
     type: composes
-    note: do-calculus is the formal rule system for reasoning about interventions.
-
+    notes: |-
+      "do-calculus is the formal rule system for reasoning about interventions."
+                }
+  - source: dqn
+    target: q-learning
+    type: descendant-of
+    notes: |-
+      "DQN is the deep-network version of tabular Q-learning."
+                }
+  - source: muzero
+    target: alphazero
+    type: descendant-of
+    notes: |-
+      "MuZero learns the dynamics model rather than requiring known rules."
+                }
   - source: mycin
     target: expert-systems
     type: descendant-of
-    note: MYCIN is the canonical 1970s medical-diagnosis expert system.
+    notes: |-
+      "MYCIN is the canonical 1970s medical-diagnosis expert system."
+                }
+  - source: naive-bayes
+    target: bayesian-stats
+    type: substrate-of
+    notes: |-
+      "Naive Bayes applies Bayes' rule under a feature-independence assumption."
+                }
+  - source: propensity-score
+    target: causal-inference
+    type: composes
+    notes: |-
+      "Propensity-score methods are a workhorse of observational causal inference."
+                }
+  - source: rlhf
+    target: ppo
+    type: uses
+    notes: |-
+      "Standard RLHF pipelines use PPO to optimize against a reward model."
+                }
