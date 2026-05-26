@@ -43,7 +43,6 @@ interface ExportEdge {
 }
 
 interface ExportMetadata {
-  timestamp: string;
   total_nodes: number;
   total_edges: number;
 }
@@ -128,7 +127,6 @@ async function exportJson(): Promise<void> {
 
     // Build metadata
     const metadata: ExportMetadata = {
-      timestamp: new Date().toISOString(),
       total_nodes: exportNodes.length,
       total_edges: exportEdges.length
     };
