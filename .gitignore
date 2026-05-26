@@ -2,6 +2,8 @@
 .claude/
 .harness-mem/
 CLAUDE.md
+Plans.md
+out/
 
 # OS / editor cruft
 .DS_Store
