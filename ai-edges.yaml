@@ -1,61 +1,523 @@
+# ============================================================================
+# ai-edges.yaml — typed relationships between concepts in ai-nodes.yaml
+# ============================================================================
+#
+# Each edge: { source, target, type, notes? }
+#   - source / target : kebab-case node ids that MUST exist in ai-nodes.yaml
+#   - type            : one of the 6 closed-set edge types (see import-yaml.ts)
+#   - notes           : one-line human rationale (not imported into the graph)
+#
+# Edge types and DIRECTION CONVENTIONS (source --type--> target):
+#   descendant-of        source is a later / derived form of target   (newer -> ancestor)
+#   substrate-of         source rests on target's mathematical substrate (method -> substrate)
+#   composes             source is a building block of target framework (part -> whole)
+#   uses                 source uses target as a component / subroutine  (user -> used)
+#   prerequisite         source is a conceptual prerequisite of target   (foundation -> dependent)
+#   historical-influence source historically influenced / preceded target (older -> newer)
+# ============================================================================
+
 edges:
+
+  # ------------------------------------------------------------------ descendant-of
   - source: adam
     target: sgd
     type: descendant-of
-    notes: |-
-      "Adam adds adaptive per-parameter learning rates on top of SGD."
-                }
+    notes: "Adam adds adaptive per-parameter learning rates on top of SGD."
   - source: alphazero
     target: alphago
     type: descendant-of
-    notes: |-
-      "AlphaZero generalized AlphaGo to multiple games without human play."
-                }
-  - source: bayesian-networks
-    target: bayesian-stats
-    type: substrate-of
-    notes: |-
-      "Bayesian networks encode joint distributions via DAG factorization."
-                }
-  - source: do-calculus
-    target: causal-inference
-    type: composes
-    notes: |-
-      "do-calculus is the formal rule system for reasoning about interventions."
-                }
-  - source: dqn
-    target: q-learning
-    type: descendant-of
-    notes: |-
-      "DQN is the deep-network version of tabular Q-learning."
-                }
+    notes: "AlphaZero generalized AlphaGo to multiple games without human play."
   - source: muzero
     target: alphazero
     type: descendant-of
-    notes: |-
-      "MuZero learns the dynamics model rather than requiring known rules."
-                }
+    notes: "MuZero generalized AlphaZero by learning the dynamics model instead of requiring known rules."
+  - source: dqn
+    target: q-learning
+    type: descendant-of
+    notes: "DQN is the deep-network version of tabular Q-learning."
   - source: mycin
     target: expert-systems
     type: descendant-of
-    notes: |-
-      "MYCIN is the canonical 1970s medical-diagnosis expert system."
-                }
+    notes: "MYCIN is the canonical 1970s medical-diagnosis expert system."
+  - source: xgboost
+    target: gradient-boosting
+    type: descendant-of
+    notes: "XGBoost is a regularized, system-optimized implementation of gradient boosting."
+  - source: lightgbm
+    target: gradient-boosting
+    type: descendant-of
+    notes: "LightGBM is a histogram-based, leaf-wise gradient-boosting framework."
+  - source: ppo
+    target: trpo
+    type: descendant-of
+    notes: "PPO replaces TRPO's hard trust region with a clipped surrogate objective."
+  - source: sac
+    target: actor-critic
+    type: descendant-of
+    notes: "Soft Actor-Critic is an off-policy, maximum-entropy actor-critic algorithm."
+  - source: actor-critic
+    target: reinforce
+    type: descendant-of
+    notes: "Actor-critic augments REINFORCE-style policy gradients with a learned value baseline (critic)."
+  - source: gru
+    target: rnn
+    type: descendant-of
+    notes: "The GRU is a gated recurrent unit that simplifies the LSTM's gating."
+  - source: lstm
+    target: rnn
+    type: descendant-of
+    notes: "The LSTM is a gated RNN designed to mitigate vanishing gradients."
+  - source: vae
+    target: autoencoder
+    type: descendant-of
+    notes: "The VAE is a probabilistic, generative descendant of the autoencoder."
+  - source: u-net
+    target: cnn
+    type: descendant-of
+    notes: "U-Net is an encoder-decoder CNN with skip connections for dense prediction."
+  - source: llm
+    target: foundation-models
+    type: descendant-of
+    notes: "Large language models are the text-centric class of foundation models."
+  - source: multimodal-models
+    target: foundation-models
+    type: descendant-of
+    notes: "Multimodal models extend foundation models across vision, audio, and text."
+  - source: logistic-regression
+    target: glm
+    type: descendant-of
+    notes: "Logistic regression is the GLM with a logit link and Bernoulli response."
+  - source: linear-regression
+    target: glm
+    type: descendant-of
+    notes: "Linear regression is the GLM with an identity link and Gaussian response."
+  - source: hmm
+    target: pgm
+    type: descendant-of
+    notes: "An HMM is a dynamic probabilistic graphical model over latent states."
+  - source: crf
+    target: pgm
+    type: descendant-of
+    notes: "A CRF is a discriminative, undirected probabilistic graphical model."
+  - source: bayesian-networks
+    target: pgm
+    type: descendant-of
+    notes: "Bayesian networks are the directed family of probabilistic graphical models."
+  - source: arima
+    target: time-series-models
+    type: descendant-of
+    notes: "ARIMA is the classical Box-Jenkins family of linear time-series models."
+  - source: umap
+    target: t-sne
+    type: descendant-of
+    notes: "UMAP followed t-SNE as a faster manifold-learning embedding with better global structure."
+  - source: gmm
+    target: k-means
+    type: descendant-of
+    notes: "A Gaussian mixture is the soft-assignment, probabilistic generalization of k-means."
+  - source: particle-filter
+    target: kalman-filter
+    type: descendant-of
+    notes: "The particle filter generalizes the Kalman filter to nonlinear, non-Gaussian models."
+  - source: linear-programming
+    target: convex-optimization
+    type: descendant-of
+    notes: "Linear programming is the special case of convex optimization with linear objective and constraints."
+  - source: integer-programming
+    target: linear-programming
+    type: descendant-of
+    notes: "Integer programming extends linear programming with integrality constraints."
+  - source: genetic-programming
+    target: genetic-algorithms
+    type: descendant-of
+    notes: "Genetic programming applies genetic algorithms to evolve executable programs."
+  - source: a-star
+    target: dijkstra
+    type: descendant-of
+    notes: "A* adds an admissible heuristic to Dijkstra's shortest-path search."
+  - source: htn-planning
+    target: planning-classical
+    type: descendant-of
+    notes: "HTN planning extends classical planning with hierarchical task decomposition."
+  - source: bm25
+    target: tf-idf
+    type: descendant-of
+    notes: "BM25 is the probabilistic refinement of TF-IDF term weighting with length normalization."
+  - source: self-supervised-learning
+    target: unsupervised-learning
+    type: descendant-of
+    notes: "Self-supervised learning is a modern form of unsupervised learning using pretext tasks."
+  - source: robust-stats
+    target: frequentist-stats
+    type: descendant-of
+    notes: "Robust statistics extends classical frequentist estimation to tolerate outliers."
+  - source: muzero
+    target: model-based-rl
+    type: descendant-of
+    notes: "MuZero is a model-based RL agent that learns its own latent dynamics model."
+
+  # ------------------------------------------------------------------ substrate-of
+  - source: bayesian-networks
+    target: bayesian-stats
+    type: substrate-of
+    notes: "Bayesian networks encode joint distributions via DAG factorization."
   - source: naive-bayes
     target: bayesian-stats
     type: substrate-of
-    notes: |-
-      "Naive Bayes applies Bayes' rule under a feature-independence assumption."
-                }
+    notes: "Naive Bayes applies Bayes' rule under a feature-independence assumption."
+  - source: svm
+    target: statistical-learning-theory
+    type: substrate-of
+    notes: "SVMs are justified by margin bounds from statistical learning (VC) theory."
+  - source: supervised-learning
+    target: statistical-learning-theory
+    type: substrate-of
+    notes: "Supervised learning's generalization guarantees come from statistical learning theory."
+  - source: multi-agent-rl
+    target: game-theory
+    type: substrate-of
+    notes: "Multi-agent RL equilibria are formalized by game theory."
+  - source: reinforcement-learning
+    target: decision-theory
+    type: substrate-of
+    notes: "RL is grounded in sequential decision theory (Markov decision processes)."
+  - source: lda-topic-modeling
+    target: bayesian-stats
+    type: substrate-of
+    notes: "Latent Dirichlet Allocation is a hierarchical Bayesian generative model."
+  - source: pgm
+    target: bayesian-stats
+    type: substrate-of
+    notes: "Probabilistic graphical models rest on the probability calculus."
+  - source: experimental-design
+    target: causal-inference
+    type: substrate-of
+    notes: "Randomized experiments are the gold-standard foundation for causal identification."
+  - source: coding-theory
+    target: entropy
+    type: substrate-of
+    notes: "Shannon's source-coding limit is the entropy of the source."
+
+  # ------------------------------------------------------------------ composes
+  - source: do-calculus
+    target: causal-inference
+    type: composes
+    notes: "do-calculus is the formal rule system for reasoning about interventions."
   - source: propensity-score
     target: causal-inference
     type: composes
-    notes: |-
-      "Propensity-score methods are a workhorse of observational causal inference."
-                }
+    notes: "Propensity-score methods are a workhorse of observational causal inference."
+  - source: did-rdd
+    target: causal-inference
+    type: composes
+    notes: "Difference-in-differences and regression discontinuity are quasi-experimental causal designs."
+  - source: instrumental-variables
+    target: causal-inference
+    type: composes
+    notes: "Instrumental variables identify causal effects under unobserved confounding."
+  - source: matrix-factorization
+    target: collaborative-filtering
+    type: composes
+    notes: "Matrix factorization is the core latent-factor technique for collaborative filtering."
+  - source: collaborative-filtering
+    target: ir-recommenders
+    type: composes
+    notes: "Collaborative filtering is a foundational recommender-system approach."
+  - source: learning-to-rank
+    target: ir-recommenders
+    type: composes
+    notes: "Learning-to-rank supplies the supervised ranking objective for retrieval systems."
+  - source: pagerank
+    target: ir-recommenders
+    type: composes
+    notes: "PageRank contributes link-analysis ranking to information retrieval."
+  - source: ann-indexes
+    target: ir-recommenders
+    type: composes
+    notes: "Approximate-nearest-neighbor indexes power vector retrieval in modern recommenders."
+  - source: contrastive-learning
+    target: self-supervised-learning
+    type: composes
+    notes: "Contrastive learning is a major self-supervised pretraining strategy."
+  - source: hypothesis-testing
+    target: frequentist-stats
+    type: composes
+    notes: "Hypothesis testing is a core procedure of frequentist inference."
+  - source: mcmc
+    target: bayesian-inference-methods
+    type: composes
+    notes: "MCMC is a workhorse sampling method for Bayesian posterior inference."
+  - source: variational-inference
+    target: bayesian-inference-methods
+    type: composes
+    notes: "Variational inference is the optimization-based approach to Bayesian inference."
+  - source: random-forest
+    target: ensemble-methods
+    type: composes
+    notes: "Random forests are a bagging ensemble of decorrelated decision trees."
+  - source: gradient-boosting
+    target: ensemble-methods
+    type: composes
+    notes: "Gradient boosting is a sequential (boosting) ensemble method."
+  - source: adaboost
+    target: ensemble-methods
+    type: composes
+    notes: "AdaBoost is the original adaptive-boosting ensemble algorithm."
+  - source: pddl
+    target: planning-classical
+    type: composes
+    notes: "PDDL is the standard modeling language for classical planning problems."
+  - source: theorem-provers
+    target: automated-reasoning
+    type: composes
+    notes: "Theorem provers are core engines of automated reasoning."
+  - source: sat-smt-solvers
+    target: automated-reasoning
+    type: composes
+    notes: "SAT/SMT solvers are decision engines underpinning automated reasoning."
+
+  # ------------------------------------------------------------------ uses
   - source: rlhf
     target: ppo
     type: uses
-    notes: |-
-      "Standard RLHF pipelines use PPO to optimize against a reward model."
-                }
+    notes: "Standard RLHF pipelines use PPO to optimize against a reward model."
+  - source: random-forest
+    target: decision-trees
+    type: uses
+    notes: "Random forests aggregate many decision trees as base learners."
+  - source: adaboost
+    target: decision-trees
+    type: uses
+    notes: "AdaBoost typically boosts shallow decision-tree (stump) weak learners."
+  - source: gradient-boosting
+    target: decision-trees
+    type: uses
+    notes: "Gradient boosting fits decision trees to successive residuals."
+  - source: decision-trees
+    target: entropy
+    type: uses
+    notes: "Decision-tree splits are chosen by information gain (entropy reduction)."
+  - source: spectral-clustering
+    target: k-means
+    type: uses
+    notes: "Spectral clustering runs k-means on the graph Laplacian's eigenvectors."
+  - source: alphago
+    target: mcts
+    type: uses
+    notes: "AlphaGo guides Monte Carlo tree search with deep policy and value networks."
+  - source: alphazero
+    target: mcts
+    type: uses
+    notes: "AlphaZero couples Monte Carlo tree search with self-play-trained networks."
+  - source: muzero
+    target: mcts
+    type: uses
+    notes: "MuZero plans with Monte Carlo tree search over its learned model."
+  - source: alphago
+    target: cnn
+    type: uses
+    notes: "AlphaGo's policy and value networks are convolutional networks over the board."
+  - source: dqn
+    target: cnn
+    type: uses
+    notes: "DQN uses a CNN to map Atari pixels to action values."
+  - source: diffusion-models
+    target: u-net
+    type: uses
+    notes: "Diffusion models typically use a U-Net as the denoising backbone."
+  - source: clip
+    target: contrastive-learning
+    type: uses
+    notes: "CLIP aligns image and text encoders with a contrastive objective."
+  - source: whisper
+    target: transformer
+    type: uses
+    notes: "Whisper is a transformer encoder-decoder for speech recognition."
+  - source: yolo
+    target: cnn
+    type: uses
+    notes: "YOLO is a single-stage CNN object detector."
+  - source: nerf
+    target: mlp
+    type: uses
+    notes: "A NeRF represents a scene as an MLP mapping position and view to color and density."
+  - source: vae
+    target: variational-inference
+    type: uses
+    notes: "The VAE trains via amortized variational inference."
+  - source: vae
+    target: kl-divergence
+    type: uses
+    notes: "The VAE objective regularizes the latent posterior with a KL term."
+  - source: variational-inference
+    target: kl-divergence
+    type: uses
+    notes: "Variational inference minimizes the KL divergence to the true posterior."
+  - source: lda-topic-modeling
+    target: variational-inference
+    type: uses
+    notes: "LDA is commonly fit with variational inference over topic assignments."
+  - source: foundation-models
+    target: self-supervised-learning
+    type: uses
+    notes: "Foundation models are pretrained at scale with self-supervised objectives."
+  - source: foundation-models
+    target: transfer-learning
+    type: uses
+    notes: "Foundation models are adapted to tasks via transfer learning / fine-tuning."
+  - source: federated-learning
+    target: sgd
+    type: uses
+    notes: "Federated learning aggregates locally computed SGD updates across devices."
+  - source: deep-learning
+    target: sgd
+    type: uses
+    notes: "Deep networks are trained by stochastic gradient descent and its variants."
+  - source: svm
+    target: convex-optimization
+    type: uses
+    notes: "The SVM margin problem is a convex quadratic program."
+  - source: bayesian-optimization
+    target: bayesian-inference-methods
+    type: uses
+    notes: "Bayesian optimization fits a probabilistic surrogate (e.g. a Gaussian process)."
+  - source: spectrogram-fingerprinting
+    target: fourier-transform
+    type: uses
+    notes: "Audio fingerprinting builds spectral peaks from the short-time Fourier transform."
+  - source: mfcc
+    target: fourier-transform
+    type: uses
+    notes: "MFCC features are computed from the Fourier spectrum via a mel filterbank and DCT."
+  - source: speech-recognition-hmm-era
+    target: hmm
+    type: uses
+    notes: "Pre-neural ASR modeled phoneme sequences with hidden Markov models."
+  - source: speech-recognition-hmm-era
+    target: mfcc
+    type: uses
+    notes: "Classical ASR front-ends used MFCC acoustic features."
+  - source: tts
+    target: transformer
+    type: uses
+    notes: "Modern neural text-to-speech systems use transformer-based acoustic models."
+  - source: slam
+    target: kalman-filter
+    type: uses
+    notes: "EKF-SLAM estimates pose and map with an extended Kalman filter."
+  - source: slam
+    target: particle-filter
+    type: uses
+    notes: "FastSLAM represents the pose posterior with a particle filter."
+  - source: rag
+    target: llm
+    type: uses
+    notes: "Retrieval-augmented generation conditions an LLM on retrieved passages."
+  - source: rag
+    target: ann-indexes
+    type: uses
+    notes: "RAG retrieves passages via approximate-nearest-neighbor vector search."
+  - source: tool-use-agents
+    target: llm
+    type: uses
+    notes: "Tool-use agents wrap an LLM that decides when to call external tools."
+  - source: program-synthesis
+    target: sat-smt-solvers
+    type: uses
+    notes: "Many program synthesizers reduce specifications to SMT-solvable constraints."
+  - source: planning-classical
+    target: classical-search
+    type: uses
+    notes: "Classical planning is solved as heuristic search over states."
+  - source: constraint-satisfaction
+    target: sat-smt-solvers
+    type: uses
+    notes: "Constraint-satisfaction problems are frequently solved by encoding to SAT/SMT."
+  - source: isolation-forest
+    target: decision-trees
+    type: uses
+    notes: "Isolation forests isolate anomalies with randomly partitioned trees."
+  - source: anomaly-detection
+    target: isolation-forest
+    type: uses
+    notes: "Isolation forest is a standard unsupervised anomaly-detection algorithm."
+  - source: semantic-web
+    target: ontologies
+    type: uses
+    notes: "The semantic web publishes machine-readable data against shared ontologies."
+  - source: knowledge-graphs
+    target: ontologies
+    type: uses
+    notes: "Knowledge graphs are typed against ontology schemas / vocabularies."
+  - source: ppo
+    target: actor-critic
+    type: uses
+    notes: "PPO optimizes a clipped objective within an actor-critic architecture."
+  - source: trpo
+    target: actor-critic
+    type: uses
+    notes: "TRPO performs trust-region updates within an actor-critic setup."
+  - source: neurosymbolic-integration
+    target: deep-learning
+    type: uses
+    notes: "Neurosymbolic systems use deep networks for perception and pattern recognition."
+  - source: neurosymbolic-integration
+    target: knowledge-representation
+    type: uses
+    notes: "Neurosymbolic systems use symbolic knowledge representation for reasoning."
+
+  # ------------------------------------------------------------------ prerequisite
+  - source: entropy
+    target: kl-divergence
+    type: prerequisite
+    notes: "KL divergence is defined in terms of (cross-)entropy."
+  - source: entropy
+    target: mutual-information
+    type: prerequisite
+    notes: "Mutual information is defined as a difference of entropies."
+  - source: bandits
+    target: reinforcement-learning
+    type: prerequisite
+    notes: "Multi-armed bandits are the simplest exploration setting underpinning RL."
+  - source: decision-theory
+    target: game-theory
+    type: prerequisite
+    notes: "Single-agent decision theory is the foundation extended by multi-agent game theory."
+  - source: pca
+    target: ica
+    type: prerequisite
+    notes: "PCA whitening is a standard preprocessing step before independent component analysis."
+
+  # ------------------------------------------------------------------ historical-influence
+  - source: minimax-alpha-beta
+    target: mcts
+    type: historical-influence
+    notes: "Alpha-beta game-tree search preceded and motivated Monte Carlo tree search."
+  - source: viola-jones
+    target: cnn
+    type: historical-influence
+    notes: "Viola-Jones cascade detection preceded the CNN era of object detection."
+  - source: sift-hog
+    target: cnn
+    type: historical-influence
+    notes: "Hand-crafted SIFT/HOG features were superseded by learned CNN features."
+  - source: viola-jones
+    target: yolo
+    type: historical-influence
+    notes: "Classical face/object detection set the stage for single-stage neural detectors like YOLO."
+  - source: semantic-web
+    target: knowledge-graphs
+    type: historical-influence
+    notes: "Semantic-web standards (RDF/OWL) directly shaped modern knowledge graphs."
+  - source: speech-recognition-hmm-era
+    target: whisper
+    type: historical-influence
+    notes: "HMM-era ASR preceded end-to-end neural systems such as Whisper."
+  - source: hmm
+    target: crf
+    type: historical-influence
+    notes: "Discriminative CRFs were introduced as a successor to generative HMMs for sequence labeling."
+  - source: fourier-transform
+    target: wavelets
+    type: historical-influence
+    notes: "Wavelet analysis extended Fourier methods with localized, multi-resolution bases."

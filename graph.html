@@ -6,17 +6,48 @@
 <title>beyond-chatbot — knowledge graph</title>
 <style>
   * { box-sizing: border-box; }
+  html, body { height: 100%; }
   body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: #0e0e10;
     color: #e8e8ea;
   }
-  #app { display: grid; grid-template-columns: 260px 1fr 320px; height: 100vh; }
+  #app { display: grid; grid-template-columns: 250px 1fr 340px; height: 100vh; }
   aside { padding: 16px; overflow-y: auto; }
   #sidebar { background: #18181b; border-right: 1px solid #2a2a2e; }
-  #detail { background: #18181b; border-left: 1px solid #2a2a2e; }
-  #cy { background: #0e0e10; min-width: 0; }
+  #detail  { background: #18181b; border-left: 1px solid #2a2a2e; }
+
+  /* ---- canvas + overlays (Neo4j-style) ---- */
+  #canvas-wrap { position: relative; min-width: 0; background: #0e0e10; overflow: hidden; }
+  #cy { position: absolute; inset: 0; }
+
+  #legend-bar {
+    position: absolute; top: 12px; left: 12px; right: 12px; z-index: 5;
+    display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none;
+  }
+  .legend-chip {
+    pointer-events: auto; display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 11px 4px 9px; border-radius: 14px; font-size: 11.5px; cursor: pointer;
+    background: #1d1d21; border: 1px solid #2a2a2e; color: #d8d8da; user-select: none;
+    transition: opacity .12s, background .12s;
+  }
+  .legend-chip .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .legend-chip.off { opacity: 0.4; text-decoration: line-through; }
+  .legend-chip:hover { background: #26262b; }
+
+  #zoom-controls {
+    position: absolute; right: 14px; bottom: 14px; z-index: 5;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  #zoom-controls button {
+    width: 34px; height: 34px; border-radius: 8px; border: 1px solid #2a2a2e;
+    background: #1d1d21; color: #e8e8ea; font-size: 16px; cursor: pointer; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #zoom-controls button:hover { background: #2a2a2e; }
+  #zoom-controls button:active { background: #34343a; }
+
   h1 { font-size: 16px; font-weight: 600; margin: 0 0 12px; color: #fff; }
   h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #8a8a90; margin: 20px 0 8px; font-weight: 600; }
   label { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 13px; cursor: pointer; user-select: none; }
@@ -27,17 +58,25 @@
     border: 1px solid #2a2a2e; border-radius: 4px; padding: 6px 8px; font-size: 13px;
   }
   input[type="search"]:focus, select:focus { outline: none; border-color: #4a5568; }
+
+  /* ---- inspector (Neo4j property panel) ---- */
+  .insp-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .insp-swatch { width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; border: 2px solid #2a2a2e; }
+  .detail-name { font-size: 18px; font-weight: 600; color: #fff; line-height: 1.2; }
+  .detail-id { font-size: 11px; color: #8a8a90; font-family: ui-monospace, "SF Mono", Menlo, monospace; margin-bottom: 14px; }
   .detail-field { margin-bottom: 14px; }
   .detail-label { font-size: 10px; text-transform: uppercase; color: #8a8a90; letter-spacing: 0.08em; margin-bottom: 4px; font-weight: 600; }
   .detail-value { font-size: 13px; line-height: 1.5; }
-  .detail-name { font-size: 18px; font-weight: 600; margin-bottom: 4px; color: #fff; }
-  .detail-id { font-size: 11px; color: #8a8a90; font-family: ui-monospace, "SF Mono", Menlo, monospace; margin-bottom: 12px; }
   .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; background: #2a2a2e; margin: 0 4px 4px 0; }
   .anchor { padding: 3px 0; font-size: 12px; }
   .anchor::before { content: "◆ "; color: #8a8a90; }
+  .rel-row { font-size: 12px; padding: 4px 0; border-top: 1px solid #222226; display: flex; align-items: center; gap: 6px; }
+  .rel-type { font-family: ui-monospace, Menlo, monospace; font-size: 10px; padding: 1px 6px; border-radius: 8px; color: #0e0e10; white-space: nowrap; }
+  .rel-dir { color: #8a8a90; }
+  .rel-other { color: #e8e8ea; }
   .empty-detail { color: #6a6a70; font-style: italic; font-size: 13px; }
   .counts { font-size: 11px; color: #8a8a90; margin-top: 16px; padding-top: 12px; border-top: 1px solid #2a2a2e; }
-  .loading, .error { padding: 40px; text-align: center; color: #8a8a90; font-size: 13px; line-height: 1.6; }
+  .loading, .error { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; color: #8a8a90; font-size: 13px; line-height: 1.7; }
   .error code { background: #2a2a2e; padding: 1px 6px; border-radius: 3px; color: #e8e8ea; }
   .legend-actions { display: flex; gap: 6px; margin-bottom: 8px; }
   .legend-actions button {
@@ -45,6 +84,7 @@
     padding: 4px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;
   }
   .legend-actions button:hover { background: #3a3a3e; }
+  .hint { font-size: 11px; color: #6a6a70; line-height: 1.5; margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -54,15 +94,10 @@
     <input type="search" id="search" placeholder="search nodes…" autocomplete="off">
 
     <h2>Layout</h2>
-    <select id="layout">
-      <option value="branches" selected>Branch sections</option>
-      <option value="cose">Force-directed</option>
-      <option value="concentric">Concentric (by era)</option>
-      <option value="grid">Grid (raw)</option>
-      <option value="circle">Circle</option>
-    </select>
+    <select id="layout"></select>
+    <p class="hint">Drag any node to reposition. In <em>Live physics</em>, neighbours follow.</p>
 
-    <h2>Filter by branch</h2>
+    <h2>Branches</h2>
     <div class="legend-actions">
       <button id="all-on">All</button>
       <button id="all-off">None</button>
@@ -72,15 +107,30 @@
     <div class="counts" id="counts"></div>
   </aside>
 
-  <div id="cy"><div class="loading">Loading nodes…</div></div>
+  <main id="canvas-wrap">
+    <div id="legend-bar"></div>
+    <div id="cy"><div class="loading">Loading nodes…</div></div>
+    <div id="zoom-controls">
+      <button id="zoom-in"   title="Zoom in">+</button>
+      <button id="zoom-out"  title="Zoom out">−</button>
+      <button id="zoom-fit"  title="Fit graph">⤢</button>
+      <button id="relayout"  title="Re-run layout">↻</button>
+    </div>
+  </main>
 
   <aside id="detail">
     <h1>Inspector</h1>
-    <div id="detail-body" class="empty-detail">Click a node to inspect its descriptor and anchors.</div>
+    <div id="detail-body" class="empty-detail">Click a node to inspect its properties, anchors, and relationships.</div>
   </aside>
 </div>
 
+<!-- Cytoscape core + force-layout engines (fcose for stable organic layout, cola for live physics) -->
 <script src="https://unpkg.com/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+<script src="https://unpkg.com/layout-base@2.0.1/layout-base.js"></script>
+<script src="https://unpkg.com/cose-base@2.2.0/cose-base.js"></script>
+<script src="https://unpkg.com/cytoscape-fcose@2.2.0/cytoscape-fcose.js"></script>
+<script src="https://unpkg.com/webcola@3.4.0/WebCola/cola.min.js"></script>
+<script src="https://unpkg.com/cytoscape-cola@2.5.1/cytoscape-cola.js"></script>
 <script>
 (async function () {
   const BRANCH_COLORS = {
@@ -97,14 +147,23 @@
     "cross-cutting":                     "#adb5bd",
   };
 
-  const STATUS_BORDER = {
-    "foundational": "#ffffff",
-    "active":       "#4a5568",
-    "legacy":       "#6a6a70",
-    "emerging":     "#06d6a0",
-    "dormant":      "#3a3a3e",
+  const EDGE_TYPE_COLORS = {
+    "descendant-of":        "#f4d35e",
+    "substrate-of":         "#90e0ef",
+    "composes":             "#c77dff",
+    "uses":                 "#52b788",
+    "prerequisite":         "#f48c06",
+    "historical-influence": "#e07a5f",
+    "related":              "#9a9aa0",
   };
 
+  // ---- register optional layout plugins (graceful fallback to built-in cose) ----
+  const HAS_FCOSE = typeof window.cytoscapeFcose !== "undefined";
+  const HAS_COLA  = typeof window.cytoscapeCola  !== "undefined" && typeof window.cola !== "undefined";
+  try { if (HAS_FCOSE) cytoscape.use(window.cytoscapeFcose); } catch (e) { /* already registered */ }
+  try { if (HAS_COLA)  cytoscape.use(window.cytoscapeCola);  } catch (e) { /* already registered */ }
+
+  // ---- load data ----
   let graphData;
   try {
     const resp = await fetch("./dist/data/graph.json");
@@ -122,393 +181,454 @@
     box.className = "error";
     box.appendChild(document.createTextNode("Failed to load graph."));
     box.appendChild(document.createElement("br"));
-    box.appendChild(document.createElement("br"));
-    box.appendChild(document.createTextNode("Make sure the project is built (run "));
-    const c1 = document.createElement("code");
-    c1.textContent = "pnpm run build";
-    box.appendChild(c1);
+    box.appendChild(document.createTextNode("Build the project ("));
+    const c1 = document.createElement("code"); c1.textContent = "pnpm run build"; box.appendChild(c1);
     box.appendChild(document.createTextNode("), then serve over http, e.g. "));
-    const c2 = document.createElement("code");
-    c2.textContent = "python3 -m http.server";
-    box.appendChild(c2);
-    box.appendChild(document.createTextNode(" from the repo root, then open "));
-    const c3 = document.createElement("code");
-    c3.textContent = "http://localhost:8000/graph.html";
-    box.appendChild(c3);
+    const c2 = document.createElement("code"); c2.textContent = "python3 -m http.server"; box.appendChild(c2);
+    box.appendChild(document.createTextNode(" from the repo root and open "));
+    const c3 = document.createElement("code"); c3.textContent = "http://localhost:8000/graph.html"; box.appendChild(c3);
     box.appendChild(document.createTextNode("."));
     box.appendChild(document.createElement("br"));
     box.appendChild(document.createElement("br"));
-    const small = document.createElement("small");
-    small.textContent = String(err);
-    box.appendChild(small);
+    const small = document.createElement("small"); small.textContent = String(err); box.appendChild(small);
     cyDiv.appendChild(box);
   }
 
-  const nodes = graphData.nodes || [];
+  const nodes    = graphData.nodes || [];
   const rawEdges = graphData.edges || [];
-  const idSet = new Set(nodes.map(n => n.id));
-
+  const idSet    = new Set(nodes.map(n => n.id));
   const branchList = [...new Set(nodes.map(n => n.branch))].sort();
 
-  const branchParents = branchList.map(b => ({
+  // ---- helpers ----
+  function prettyBranch(b) {
+    return b.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  }
+  // pick readable caption colour from background luminance
+  function textOn(hex) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
+    if (!m) return "#fff";
+    const n = parseInt(m[1], 16);
+    const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return lum > 0.6 ? "#141417" : "#ffffff";
+  }
+
+  // typed-edge degree per node (drives node sizing)
+  const typedDegree = new Map();
+  const validTyped = rawEdges.filter(e => {
+    const ok = idSet.has(e.source) && idSet.has(e.target);
+    if (!ok) console.warn("ai-edges.yaml: unknown id in edge", e);
+    return ok;
+  });
+  validTyped.forEach(e => {
+    typedDegree.set(e.source, (typedDegree.get(e.source) || 0) + 1);
+    typedDegree.set(e.target, (typedDegree.get(e.target) || 0) + 1);
+  });
+
+  // ---- branch hub nodes (anchor concepts so the sparse graph reads as connected) ----
+  const memberCount = new Map();
+  nodes.forEach(n => memberCount.set(n.branch, (memberCount.get(n.branch) || 0) + 1));
+
+  const hubNodes = branchList.map(b => ({
     data: {
-      id: "branch:" + b,
-      label: b,
-      isBranch: true,
+      id: "hub:" + b, isHub: true, branch: b,
+      label: prettyBranch(b),
       color: BRANCH_COLORS[b] || "#888",
+      textColor: textOn(BRANCH_COLORS[b]),
+      size: Math.min(96, 46 + Math.sqrt(memberCount.get(b) || 1) * 7),
     },
   }));
 
-  const cyNodes = branchParents.concat(nodes.map(n => ({
-    data: {
-      id: n.id,
-      parent: "branch:" + n.branch,
-      label: n.name,
-      branch: n.branch,
-      type: n.type,
-      era: n.era,
-      status: n.status,
-      descriptor: n.descriptor,
-      anchors: n.anchors || [],
-      aliases: n.aliases || [],
-      color: BRANCH_COLORS[n.branch] || "#888",
-      border: STATUS_BORDER[n.status] || "#333",
-    },
-  })));
-
-  const cyEdges = rawEdges
-    .filter(e => {
-      const ok = idSet.has(e.source) && idSet.has(e.target);
-      if (!ok) console.warn("ai-edges.yaml: unknown id in edge", e);
-      return ok;
-    })
-    .map((e, i) => ({
+  const conceptNodes = nodes.map(n => {
+    const deg = typedDegree.get(n.id) || 0;
+    const color = BRANCH_COLORS[n.branch] || "#888";
+    return {
       data: {
-        id: "e" + i,
-        source: e.source,
-        target: e.target,
-        type: e.type || "related",
-        note: e.note || "",
+        id: n.id, label: n.name, branch: n.branch,
+        type: n.type, era: n.era, status: n.status,
+        descriptor: n.descriptor, anchors: n.anchors || [], aliases: n.aliases || [],
+        color, textColor: textOn(color),
+        size: 30 + Math.min(deg, 4) * 9,
+        tdeg: deg,
       },
-    }));
+    };
+  });
 
+  // membership edges (faint, anchor each concept to its branch hub)
+  const memberEdges = nodes.map(n => ({
+    data: { id: "m:" + n.id, source: n.id, target: "hub:" + n.branch, kind: "member" },
+  }));
+
+  // typed relationship edges (the real ai-edges.yaml relationships)
+  const typedEdges = validTyped.map((e, i) => ({
+    data: {
+      id: "t" + i, source: e.source, target: e.target,
+      kind: "typed", type: e.type || "related",
+      color: EDGE_TYPE_COLORS[e.type] || EDGE_TYPE_COLORS.related,
+    },
+  }));
+
+  // ---- build cytoscape ----
   document.querySelector("#cy").textContent = "";
   const cy = cytoscape({
     container: document.querySelector("#cy"),
-    elements: { nodes: cyNodes, edges: cyEdges },
+    elements: {
+      nodes: hubNodes.concat(conceptNodes),
+      edges: memberEdges.concat(typedEdges),
+    },
+    minZoom: 0.08, maxZoom: 4, wheelSensitivity: 0.25,
     style: [
+      // concept nodes — circular, caption inside (Neo4j-style)
       { selector: "node", style: {
           "background-color": "data(color)",
-          "border-color": "data(border)",
-          "border-width": 1.5,
-          "label": "",
-          "color": "#e8e8ea",
-          "font-size": 10,
-          "text-valign": "bottom",
-          "text-margin-y": 4,
-          "text-outline-color": "#0e0e10",
-          "text-outline-width": 2,
-          "width": 22, "height": 22,
+          "border-color": "#0e0e10", "border-width": 2,
+          "width": "data(size)", "height": "data(size)",
+          "label": "", "color": "data(textColor)",
+          "font-size": 8, "font-weight": 600,
+          "text-valign": "center", "text-halign": "center",
+          "text-wrap": "wrap", "text-max-width": "data(size)",
+          "min-zoomed-font-size": 6,
       }},
-      { selector: "node:parent", style: {
-          "background-opacity": 0.04,
-          "background-color": "data(color)",
-          "border-color": "data(color)",
-          "border-opacity": 0.35,
-          "border-width": 1,
-          "shape": "round-rectangle",
-          "label": "data(label)",
-          "color": "data(color)",
-          "font-size": 13,
-          "font-weight": "bold",
-          "text-valign": "top",
-          "text-halign": "center",
-          "text-margin-y": -6,
-          "text-outline-width": 0,
-          "padding": 18,
-          "events": "no",
+      // branch hubs — larger, always-labelled, ring style
+      { selector: "node[?isHub]", style: {
+          "background-color": "data(color)", "background-opacity": 0.18,
+          "border-color": "data(color)", "border-width": 2.5,
+          "label": "data(label)", "color": "data(color)",
+          "font-size": 13, "font-weight": 700,
+          "text-valign": "center", "text-halign": "center",
+          "text-wrap": "wrap", "text-max-width": 110,
+          "text-outline-color": "#0e0e10", "text-outline-width": 2,
       }},
-      { selector: "node.show-label", style: {
-          "label": "data(label)",
+      // captions for concept nodes appear when zoomed / hovered / selected
+      { selector: "node.show-label", style: { "label": "data(label)" }},
+      { selector: "node.hover", style: {
+          "label": "data(label)", "border-color": "#ffffff", "border-width": 2.5,
+          "underlay-color": "data(color)", "underlay-opacity": 0.25,
+          "underlay-padding": 8, "z-index": 999,
       }},
       { selector: "node:selected", style: {
-          "border-color": "#ffffff",
-          "border-width": 3,
-          "width": 28, "height": 28,
-          "label": "data(label)",
-          "font-size": 12,
-          "z-index": 999,
+          "label": "data(label)", "border-color": "#ffffff", "border-width": 3,
+          "underlay-color": "data(color)", "underlay-opacity": 0.35,
+          "underlay-padding": 12, "z-index": 1000,
       }},
-      { selector: "node.hover", style: {
-          "label": "data(label)",
-          "font-size": 12,
-          "z-index": 999,
+      { selector: "node.dim", style: { "opacity": 0.10, "text-opacity": 0 }},
+
+      // membership edges — faint scaffolding to the branch hub
+      { selector: "edge[kind = 'member']", style: {
+          "width": 1, "line-color": "#2a2a2e", "opacity": 0.55,
+          "curve-style": "haystack", "haystack-radius": 0,
       }},
-      { selector: "node.dim", style: { "opacity": 0.12 }},
-      { selector: "edge", style: {
-          "width": 1,
-          "line-color": "#3a3a3e",
-          "target-arrow-color": "#5a5a60",
-          "target-arrow-shape": "triangle",
-          "curve-style": "bezier",
-          "label": "data(type)",
-          "font-size": 7,
-          "color": "#6a6a70",
+      // typed relationships — coloured, directional, labelled (Neo4j relationship pills)
+      { selector: "edge[kind = 'typed']", style: {
+          "width": 2.5, "line-color": "data(color)",
+          "target-arrow-color": "data(color)", "target-arrow-shape": "triangle",
+          "curve-style": "bezier", "arrow-scale": 1.1,
+          "label": "data(type)", "font-size": 8, "color": "#d8d8da",
           "text-rotation": "autorotate",
-          "text-background-color": "#0e0e10",
-          "text-background-opacity": 1,
-          "text-background-padding": 1,
+          "text-background-color": "#0e0e10", "text-background-opacity": 0.9,
+          "text-background-padding": 3, "text-background-shape": "round-rectangle",
+          "z-index": 50,
       }},
-      { selector: "edge.dim", style: { "opacity": 0.08 }},
-      { selector: "edge:selected", style: {
-          "line-color": "#90e0ef",
-          "target-arrow-color": "#90e0ef",
-          "width": 2,
+      { selector: "edge.dim", style: { "opacity": 0.06, "text-opacity": 0 }},
+      { selector: "edge.hl", style: {
+          "width": 3.5, "line-color": "#ffffff", "target-arrow-color": "#ffffff", "z-index": 900,
       }},
     ],
-    layout: layoutOpts("branches", false),
-    wheelSensitivity: 0.2,
+    layout: { name: "preset" }, // real layout applied below once sized
   });
 
-  function layoutOpts(name, animate) {
-    if (name === "branches") return branchSectionsLayout(animate);
-    const opts = { name, animate: !!animate, fit: true, padding: 30 };
-    if (name === "cose") {
-      Object.assign(opts, { nodeRepulsion: 8000, idealEdgeLength: 90 });
-    } else if (name === "concentric") {
-      opts.concentric = (n) => {
-        const m = String(n.data("era") || "").match(/(\d{4})/);
-        return m ? parseInt(m[1], 10) : 1900;
+  // ---- layouts ----
+  const COLA_NAME  = HAS_COLA  ? "cola"  : (HAS_FCOSE ? "fcose" : "cose");
+  const FCOSE_NAME = HAS_FCOSE ? "fcose" : "cose";
+
+  function layoutOpts(name) {
+    if (name === "live") {
+      return {
+        name: COLA_NAME, animate: true, fit: true, padding: 60,
+        infinite: COLA_NAME === "cola", convergenceThreshold: 0.01,
+        nodeSpacing: 8, handleDisconnected: true,
+        edgeLength: (e) => e.data("kind") === "member" ? 70 : 150,
+        randomize: false,
       };
-      opts.levelWidth = () => 1;
-      opts.minNodeSpacing = 14;
-    } else if (name === "grid") {
-      opts.sort = (a, b) => (a.data("branch") || "").localeCompare(b.data("branch") || "");
-      opts.avoidOverlapPadding = 8;
     }
-    return opts;
+    if (name === "force") {
+      return {
+        name: FCOSE_NAME, animate: true, fit: true, padding: 60,
+        quality: "default", randomize: true, nodeRepulsion: 9000,
+        idealEdgeLength: (e) => e.data("kind") === "member" ? 60 : 150,
+        nestingFactor: 0.1, gravity: 0.3, numIter: 2500,
+      };
+    }
+    if (name === "concentric") {
+      return {
+        name: "concentric", animate: true, fit: true, padding: 40,
+        concentric: (n) => {
+          if (n.data("isHub")) return 100;
+          const m = String(n.data("era") || "").match(/(\d{4})/);
+          return m ? (parseInt(m[1], 10) - 1900) / 10 : 0;
+        },
+        levelWidth: () => 1, minNodeSpacing: 12,
+      };
+    }
+    if (name === "grid") {
+      return { name: "grid", animate: true, fit: true, padding: 30,
+        sort: (a, b) => (a.data("branch") || "").localeCompare(b.data("branch") || "") };
+    }
+    return { name: "circle", animate: true, fit: true, padding: 30 };
   }
 
-  function branchSectionsLayout(animate) {
-    const NODE_DX = 32;
-    const NODE_DY = 32;
-    const SECTION_GAP = 90;
-    const META_COLS = 3;
+  // populate layout dropdown (label which engines are active)
+  const layoutSelect = document.querySelector("#layout");
+  const layoutOptions = [
+    ["live",  "Live physics" + (HAS_COLA ? "" : " (cose)")],
+    ["force", "Force-directed" + (HAS_FCOSE ? "" : " (cose)")],
+    ["concentric", "Concentric (by era)"],
+    ["grid", "Grid (by branch)"],
+    ["circle", "Circle"],
+  ];
+  layoutOptions.forEach(([v, t], i) => {
+    const o = document.createElement("option");
+    o.value = v; o.textContent = t; if (i === 0) o.selected = true;
+    layoutSelect.appendChild(o);
+  });
 
-    const byBranch = new Map();
-    nodes.forEach(n => {
-      if (!byBranch.has(n.branch)) byBranch.set(n.branch, []);
-      byBranch.get(n.branch).push(n);
-    });
+  let currentLayout = null;
+  function runLayout(name) {
+    if (currentLayout) currentLayout.stop();
+    currentLayout = cy.layout(layoutOpts(name));
+    currentLayout.run();
+  }
+  runLayout("live");
 
-    const dims = branchList.map(b => {
-      const count = byBranch.get(b).length;
-      const cols = Math.max(1, Math.ceil(Math.sqrt(count * 1.4)));
-      const rows = Math.ceil(count / cols);
-      return { branch: b, cols, rows, width: cols * NODE_DX, height: rows * NODE_DY };
-    });
+  layoutSelect.addEventListener("change", e => runLayout(e.target.value));
+  document.querySelector("#relayout").addEventListener("click", () => runLayout(layoutSelect.value));
 
-    const metaRows = Math.ceil(branchList.length / META_COLS);
-    const colW = new Array(META_COLS).fill(0);
-    const rowH = new Array(metaRows).fill(0);
-    dims.forEach((d, i) => {
-      const c = i % META_COLS, r = Math.floor(i / META_COLS);
-      colW[c] = Math.max(colW[c], d.width);
-      rowH[r] = Math.max(rowH[r], d.height);
-    });
-    const colX = [0];
-    for (let i = 1; i < META_COLS; i++) colX[i] = colX[i - 1] + colW[i - 1] + SECTION_GAP;
-    const rowY = [0];
-    for (let i = 1; i < metaRows; i++) rowY[i] = rowY[i - 1] + rowH[i - 1] + SECTION_GAP;
+  // ---- zoom controls ----
+  function zoomBy(factor) {
+    cy.animate({ zoom: { level: cy.zoom() * factor, renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } } }, { duration: 150 });
+  }
+  document.querySelector("#zoom-in").addEventListener("click", () => zoomBy(1.3));
+  document.querySelector("#zoom-out").addEventListener("click", () => zoomBy(1 / 1.3));
+  document.querySelector("#zoom-fit").addEventListener("click", () => cy.animate({ fit: { padding: 50 } }, { duration: 250 }));
 
-    const positions = {};
-    dims.forEach((d, i) => {
-      const c = i % META_COLS, r = Math.floor(i / META_COLS);
-      const ox = colX[c], oy = rowY[r];
-      byBranch.get(d.branch).forEach((n, j) => {
-        const sc = j % d.cols, sr = Math.floor(j / d.cols);
-        positions[n.id] = { x: ox + sc * NODE_DX, y: oy + sr * NODE_DY };
-      });
-    });
+  // ---- top legend chips (branch toggles) ----
+  const legendBar = document.querySelector("#legend-bar");
+  const enabledBranches = new Set(branchList);
+  const sidebarFilters = document.querySelector("#branch-filters");
 
-    return {
-      name: "preset",
-      positions: (n) => positions[n.id()] || null,
-      fit: true,
-      padding: 40,
-      animate: !!animate,
-    };
+  function setBranch(b, on) {
+    if (on) enabledBranches.add(b); else enabledBranches.delete(b);
+    // keep legend chip + sidebar checkbox in sync
+    const chip = legendBar.querySelector(`[data-branch="${b}"]`);
+    if (chip) chip.classList.toggle("off", !on);
+    const cb = sidebarFilters.querySelector(`input[data-branch="${b}"]`);
+    if (cb) cb.checked = on;
+    applyBranchFilter();
   }
 
-  // ---- Sidebar: branch filters ----
-  const branchFilters = document.querySelector("#branch-filters");
-  const branches = [...new Set(nodes.map(n => n.branch))].sort();
-  branches.forEach(b => {
+  branchList.forEach(b => {
+    const chip = document.createElement("span");
+    chip.className = "legend-chip"; chip.dataset.branch = b;
+    const dot = document.createElement("span"); dot.className = "dot";
+    dot.style.background = BRANCH_COLORS[b] || "#888";
+    const txt = document.createElement("span"); txt.textContent = prettyBranch(b);
+    chip.appendChild(dot); chip.appendChild(txt);
+    chip.addEventListener("click", () => setBranch(b, !enabledBranches.has(b)));
+    legendBar.appendChild(chip);
+  });
+
+  // ---- sidebar branch filters ----
+  branchList.forEach(b => {
     const lbl = document.createElement("label");
     const input = document.createElement("input");
-    input.type = "checkbox";
-    input.checked = true;
-    input.dataset.branch = b;
-    const dot = document.createElement("span");
-    dot.className = "branch-dot";
+    input.type = "checkbox"; input.checked = true; input.dataset.branch = b;
+    input.addEventListener("change", () => setBranch(b, input.checked));
+    const dot = document.createElement("span"); dot.className = "branch-dot";
     dot.style.background = BRANCH_COLORS[b] || "#888";
-    const text = document.createElement("span");
-    text.textContent = b;
-    lbl.appendChild(input);
-    lbl.appendChild(dot);
-    lbl.appendChild(text);
-    branchFilters.appendChild(lbl);
+    const text = document.createElement("span"); text.textContent = prettyBranch(b);
+    lbl.appendChild(input); lbl.appendChild(dot); lbl.appendChild(text);
+    sidebarFilters.appendChild(lbl);
   });
 
   function applyBranchFilter() {
-    const enabled = new Set();
-    branchFilters.querySelectorAll("input").forEach(c => {
-      if (c.checked) enabled.add(c.dataset.branch);
-    });
     cy.batch(() => {
       cy.nodes().forEach(n => {
-        const d = n.data();
-        const b = d.isBranch ? d.label : d.branch;
-        enabled.has(b) ? n.show() : n.hide();
+        const b = n.data("isHub") ? n.data("branch") : n.data("branch");
+        enabledBranches.has(b) ? n.show() : n.hide();
       });
     });
     updateCounts();
   }
 
-  branchFilters.addEventListener("change", applyBranchFilter);
   document.querySelector("#all-on").addEventListener("click", () => {
-    branchFilters.querySelectorAll("input").forEach(c => c.checked = true);
+    branchList.forEach(b => { enabledBranches.add(b); });
+    legendBar.querySelectorAll(".legend-chip").forEach(c => c.classList.remove("off"));
+    sidebarFilters.querySelectorAll("input").forEach(c => c.checked = true);
     applyBranchFilter();
   });
   document.querySelector("#all-off").addEventListener("click", () => {
-    branchFilters.querySelectorAll("input").forEach(c => c.checked = false);
+    enabledBranches.clear();
+    legendBar.querySelectorAll(".legend-chip").forEach(c => c.classList.add("off"));
+    sidebarFilters.querySelectorAll("input").forEach(c => c.checked = false);
     applyBranchFilter();
   });
 
-  // ---- Layout switcher ----
-  document.querySelector("#layout").addEventListener("change", e => {
-    cy.layout(layoutOpts(e.target.value, true)).run();
-  });
+  // ---- focus: click a node → highlight its neighbourhood (Neo4j-style) ----
+  function focusNode(node) {
+    const hood = node.closedNeighborhood();
+    cy.batch(() => {
+      cy.elements().addClass("dim");
+      hood.removeClass("dim");
+      node.connectedEdges("[kind = 'typed']").addClass("hl");
+    });
+  }
+  function clearFocus() {
+    cy.batch(() => { cy.elements().removeClass("dim hl"); });
+  }
 
-  // ---- Click handlers ----
   cy.on("tap", "node", evt => {
-    const d = evt.target.data();
-    if (d.isBranch) return;
-    renderDetail(d);
+    const n = evt.target;
+    focusNode(n);
+    renderDetail(n);
   });
   cy.on("tap", evt => {
     if (evt.target === cy) {
+      clearFocus();
       renderDetail(null);
-      cy.elements().removeClass("dim");
       document.querySelector("#search").value = "";
     }
   });
 
-  // ---- Labels: hidden by default; show on hover, on selection, and when zoomed in ----
-  const LABEL_ZOOM_THRESHOLD = 0.9;
-  const conceptNodes = () => cy.nodes().filter(n => !n.data("isBranch"));
+  // ---- hover + zoom-driven captions ----
+  const LABEL_ZOOM_THRESHOLD = 0.55;
+  const concepts = () => cy.nodes().filter(n => !n.data("isHub"));
   function syncZoomLabels() {
-    if (cy.zoom() >= LABEL_ZOOM_THRESHOLD) conceptNodes().addClass("show-label");
-    else conceptNodes().removeClass("show-label");
+    if (cy.zoom() >= LABEL_ZOOM_THRESHOLD) concepts().addClass("show-label");
+    else concepts().removeClass("show-label");
   }
   cy.on("zoom", syncZoomLabels);
-  cy.on("mouseover", "node", e => {
-    if (!e.target.data("isBranch")) e.target.addClass("hover");
-  });
+  cy.on("mouseover", "node", e => { if (!e.target.data("isHub")) e.target.addClass("hover"); });
   cy.on("mouseout", "node", e => e.target.removeClass("hover"));
-  syncZoomLabels();
+  cy.ready(syncZoomLabels);
 
+  // ---- inspector ----
   function renderDetail(n) {
     const body = document.querySelector("#detail-body");
     body.textContent = "";
     if (!n) {
       body.className = "empty-detail";
-      body.textContent = "Click a node to inspect its descriptor and anchors.";
+      body.textContent = "Click a node to inspect its properties, anchors, and relationships.";
       return;
     }
     body.className = "";
+    const d = n.data();
 
-    body.appendChild(makeDiv("detail-name", n.label));
-    body.appendChild(makeDiv("detail-id", n.id));
+    const head = document.createElement("div");
+    head.className = "insp-head";
+    const sw = document.createElement("div");
+    sw.className = "insp-swatch"; sw.style.background = d.color;
+    head.appendChild(sw);
+    head.appendChild(makeDiv("detail-name", d.label));
+    body.appendChild(head);
+
+    if (d.isHub) {
+      body.appendChild(makeDiv("detail-id", d.id));
+      const c = memberCount.get(d.branch) || 0;
+      body.appendChild(makeField("branch", prettyBranch(d.branch)));
+      body.appendChild(makeField("concepts in branch", String(c)));
+      return;
+    }
+
+    body.appendChild(makeDiv("detail-id", d.id));
 
     const pills = document.createElement("div");
     pills.className = "detail-field";
-    pills.appendChild(makePill(n.branch, n.color, "#0e0e10"));
-    pills.appendChild(makePill(n.type));
-    pills.appendChild(makePill(n.status));
-    pills.appendChild(makePill(String(n.era)));
+    pills.appendChild(makePill(prettyBranch(d.branch), d.color, textOn(d.color)));
+    pills.appendChild(makePill(d.type));
+    pills.appendChild(makePill(d.status));
+    pills.appendChild(makePill(String(d.era)));
     body.appendChild(pills);
 
-    if (n.aliases && n.aliases.length) {
-      body.appendChild(makeField("aliases", n.aliases.join(", ")));
-    }
-    body.appendChild(makeField("descriptor", n.descriptor || ""));
+    if (d.aliases && d.aliases.length) body.appendChild(makeField("aliases", d.aliases.join(", ")));
+    body.appendChild(makeField("descriptor", d.descriptor || ""));
 
-    const anchorsField = document.createElement("div");
-    anchorsField.className = "detail-field";
-    anchorsField.appendChild(makeDiv("detail-label", "anchors"));
-    const anchorsValue = document.createElement("div");
-    anchorsValue.className = "detail-value";
-    if (n.anchors && n.anchors.length) {
-      n.anchors.forEach(a => anchorsValue.appendChild(makeDiv("anchor", a)));
+    // anchors
+    const af = document.createElement("div"); af.className = "detail-field";
+    af.appendChild(makeDiv("detail-label", "anchors"));
+    const av = document.createElement("div"); av.className = "detail-value";
+    if (d.anchors && d.anchors.length) d.anchors.forEach(a => av.appendChild(makeDiv("anchor", a)));
+    else av.appendChild(makeDiv("empty-detail", "(none)"));
+    af.appendChild(av); body.appendChild(af);
+
+    // typed relationships
+    const rels = n.connectedEdges("[kind = 'typed']");
+    const rf = document.createElement("div"); rf.className = "detail-field";
+    rf.appendChild(makeDiv("detail-label", "relationships"));
+    if (rels.length === 0) {
+      rf.appendChild(makeDiv("empty-detail", "(no typed edges yet)"));
     } else {
-      anchorsValue.appendChild(makeDiv("empty-detail", "(none)"));
+      rels.forEach(e => {
+        const row = document.createElement("div"); row.className = "rel-row";
+        const outgoing = e.data("source") === d.id;
+        const otherId = outgoing ? e.data("target") : e.data("source");
+        const other = cy.getElementById(otherId);
+        const tag = document.createElement("span");
+        tag.className = "rel-type"; tag.textContent = e.data("type");
+        tag.style.background = e.data("color");
+        const dir = document.createElement("span"); dir.className = "rel-dir";
+        dir.textContent = outgoing ? "→" : "←";
+        const oth = document.createElement("span"); oth.className = "rel-other";
+        oth.textContent = other.nonempty() ? other.data("label") : otherId;
+        row.appendChild(tag); row.appendChild(dir); row.appendChild(oth);
+        // click a relationship to jump to the other node
+        row.style.cursor = "pointer";
+        row.addEventListener("click", () => {
+          if (other.nonempty()) { focusNode(other); renderDetail(other); cy.animate({ center: { eles: other } }, { duration: 250 }); }
+        });
+        rf.appendChild(row);
+      });
     }
-    anchorsField.appendChild(anchorsValue);
-    body.appendChild(anchorsField);
+    body.appendChild(rf);
   }
 
-  function makeDiv(cls, text) {
-    const el = document.createElement("div");
-    el.className = cls;
-    el.textContent = text;
-    return el;
-  }
-
+  function makeDiv(cls, text) { const el = document.createElement("div"); el.className = cls; el.textContent = text; return el; }
   function makePill(text, bg, fg) {
-    const el = document.createElement("span");
-    el.className = "pill";
-    if (bg) el.style.background = bg;
-    if (fg) el.style.color = fg;
-    el.textContent = text;
-    return el;
+    const el = document.createElement("span"); el.className = "pill";
+    if (bg) el.style.background = bg; if (fg) el.style.color = fg;
+    el.textContent = text; return el;
   }
-
   function makeField(labelText, valueText) {
-    const field = document.createElement("div");
-    field.className = "detail-field";
-    field.appendChild(makeDiv("detail-label", labelText));
-    field.appendChild(makeDiv("detail-value", valueText));
-    return field;
+    const f = document.createElement("div"); f.className = "detail-field";
+    f.appendChild(makeDiv("detail-label", labelText));
+    f.appendChild(makeDiv("detail-value", valueText));
+    return f;
   }
 
-  // ---- Search: dim non-matches, zoom-to small result set ----
+  // ---- search: dim non-matches, zoom small result set ----
   document.querySelector("#search").addEventListener("input", e => {
     const q = e.target.value.trim().toLowerCase();
-    if (!q) {
-      cy.elements().removeClass("dim");
-      return;
-    }
+    if (!q) { clearFocus(); return; }
     const matched = cy.nodes().filter(n => {
+      if (n.data("isHub")) return false;
       const d = n.data();
-      if (d.isBranch) return false;
       return (d.label || "").toLowerCase().includes(q) ||
              (d.id || "").toLowerCase().includes(q) ||
              (d.aliases || []).some(a => a.toLowerCase().includes(q));
     });
     cy.batch(() => {
-      cy.elements().addClass("dim");
+      cy.elements().addClass("dim").removeClass("hl");
       matched.removeClass("dim");
-      matched.parents().removeClass("dim");
       matched.connectedEdges().removeClass("dim");
+      matched.neighborhood().removeClass("dim");
     });
-    if (matched.length > 0 && matched.length < 8) cy.fit(matched, 80);
+    if (matched.length > 0 && matched.length < 8) cy.animate({ fit: { eles: matched, padding: 80 } }, { duration: 250 });
   });
 
+  // ---- counts ----
   function updateCounts() {
-    const visible = cy.nodes(":visible").filter(n => !n.data("isBranch")).length;
+    const visible = cy.nodes(":visible").filter(n => !n.data("isHub")).length;
     document.querySelector("#counts").textContent =
-      visible + " / " + nodes.length + " nodes  ·  " + cyEdges.length + " edges";
+      visible + " / " + nodes.length + " nodes  ·  " + typedEdges.length + " typed edges  ·  " + branchList.length + " branches";
   }
   updateCounts();
 })();
