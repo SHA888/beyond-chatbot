@@ -11,6 +11,10 @@ pnpm-lock.yaml
 .ladybugdb/
 dist/
 
+# Environment & secrets
+.env
+.env.local
+
 # OS / editor cruft
 .DS_Store
 Thumbs.db
