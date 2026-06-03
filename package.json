@@ -39,6 +39,7 @@
     "vitest": "^4.1.7"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.100.1",
     "@ladybugdb/core": "^0.16.1",
     "js-yaml": "^4.1.0"
   }
