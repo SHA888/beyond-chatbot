@@ -1,0 +1,11 @@
+edges:
+  - source: lstm
+    target: rnn
+    type: substrate-of
+    notes: "From Wikidata: LSTM (Q6673524) is a variant of RNN (Q1457734)"
+    provenance: "Wikidata:Q6673524 [P279:subclass-of] → Q1457734"
+  - source: adam
+    target: sgd
+    type: substrate-of
+    notes: "From Wikidata: Adam optimizer (Q29410287) builds on SGD (Q7617819)"
+    provenance: "Wikidata:Q29410287 [P279:subclass-of] → Q7617819"
