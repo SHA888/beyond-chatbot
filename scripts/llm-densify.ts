@@ -24,13 +24,19 @@ interface Node {
   aliases?: string[];
 }
 
+type EdgeType = "substrate-of" | "composes" | "historical-influence" | "descendant-of" | "prerequisite" | "uses";
+
 interface EdgeCandidate {
   source: string;
   target: string;
-  type: "substrate-of" | "composes" | "historical-influence" | "descendant-of" | "prerequisite" | "uses";
+  type: EdgeType;
   notes: string;
   confidence: number;
   provenance: string;
+}
+
+function isValidEdgeType(value: string): value is EdgeType {
+  return ["substrate-of", "composes", "historical-influence", "descendant-of", "prerequisite", "uses"].includes(value);
 }
 
 const CANDIDATES_DIR = path.join(process.cwd(), "data", "candidates");
@@ -118,14 +124,13 @@ function parseEdgeResponse(
       if (!nodeIds.has(edge.target)) continue;
       // Avoid self-loops
       if (edge.target === sourceId) continue;
-      // Validate edge type
-      const validTypes = ["substrate-of", "composes", "historical-influence", "descendant-of", "prerequisite", "uses"];
-      if (!validTypes.includes(edge.type)) continue;
+      // Validate edge type with type predicate
+      if (!isValidEdgeType(edge.type)) continue;
 
       candidates.push({
         source: sourceId,
         target: edge.target,
-        type: edge.type as any,
+        type: edge.type,
         notes: edge.reasoning || `Claude-proposed edge`,
         confidence: Math.min(1, Math.max(0, edge.confidence || 0.7)),
         provenance: `Claude (LLM-densify)`,
@@ -219,13 +224,15 @@ Return 3-5 high-confidence edges in JSON format as specified in the system promp
       // Track token usage for cost monitoring
       const usage = response.usage;
       totalInputTokens += usage.input_tokens;
-      totalCacheCreationTokens += (usage.cache_creation_input_tokens ?? 0);
-      totalCacheReadTokens += (usage.cache_read_input_tokens ?? 0);
-      totalOutputTokens += (usage.output_tokens ?? 0);
+      totalCacheCreationTokens += usage.cache_creation_input_tokens ?? 0;
+      totalCacheReadTokens += usage.cache_read_input_tokens ?? 0;
+      totalOutputTokens += usage.output_tokens;
 
       // Extract content from response
       const responseText =
-        response.content[0].type === "text" ? response.content[0].text : "";
+        response.content.length > 0 && response.content[0].type === "text"
+          ? response.content[0].text
+          : "";
       const candidates = parseEdgeResponse(node.id, responseText, nodeIds);
       allCandidates.push(...candidates);
 

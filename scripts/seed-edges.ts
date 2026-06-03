@@ -122,33 +122,45 @@ async function fetchWikidataEntity(qid: string): Promise<Record<string, any> | n
 
 /**
  * Extract the English label for a Wikidata QID (cached to avoid double-fetches).
+ * Returns { label, wasCached } to allow callers to conditionally apply delays.
  */
-const labelCache: Map<string, string> = new Map();
+const labelCache: Map<string, string | null> = new Map();
+const knownNullQids: Set<string> = new Set();
 
-async function getWikidataLabel(qid: string): Promise<string | null> {
-  if (labelCache.has(qid)) return labelCache.get(qid) || null;
+async function getWikidataLabel(qid: string): Promise<{ label: string | null; wasCached: boolean }> {
+  if (labelCache.has(qid)) {
+    return { label: labelCache.get(qid) ?? null, wasCached: true };
+  }
 
   const entity = await fetchWikidataEntity(qid);
-  const label = entity?.labels?.en?.value || null;
+  const label = entity?.labels?.en?.value ?? null;
   labelCache.set(qid, label);
-  return label;
+  if (label === null) knownNullQids.add(qid);
+  return { label, wasCached: false };
+}
+
+/**
+ * Normalize text for fuzzy matching.
+ */
+function normalize(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
 }
 
 /**
  * Fuzzy match: attempt to match a Wikidata label to one of our nodes.
- * Strategy: try exact match, then substring match, then word-overlap match.
+ * Strategy: try exact match, then substring match, then word overlap (discriminating), then prefix match.
  */
 function fuzzyMatchLabel(
   wikidataLabel: string,
   nodeNames: { id: string; name: string; aliases: string[] }[]
 ): string | null {
-  const wikiNorm = wikidataLabel.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+  const wikiNorm = normalize(wikidataLabel);
   const wikiWords = wikiNorm.split(/\s+/).filter(w => w.length > 0);
 
   for (const node of nodeNames) {
     const allLabels = [node.name, ...node.aliases];
     for (const label of allLabels) {
-      const nodeNorm = label.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+      const nodeNorm = normalize(label);
       const nodeWords = nodeNorm.split(/\s+/).filter(w => w.length > 0);
 
       // 1. Exact match
@@ -157,17 +169,19 @@ function fuzzyMatchLabel(
       // 2. Substring match (one is contained in the other)
       if (wikiNorm.includes(nodeNorm) || nodeNorm.includes(wikiNorm)) return node.id;
 
-      // 3. Prefix match (first 3+ chars match, helpful for abbreviations/variations)
-      if (nodeNorm.length >= 3 && wikiNorm.length >= 3) {
-        const minLen = Math.min(nodeNorm.length, wikiNorm.length);
-        if (nodeNorm.substring(0, minLen) === wikiNorm.substring(0, minLen)) return node.id;
-      }
-
-      // 4. Word overlap: if >50% of words match, it's likely the same concept
+      // 3. Word overlap: if >50% of words match, it's likely the same concept
+      // Order before prefix to avoid false positives on short tokens
       if (nodeWords.length > 0 && wikiWords.length > 0) {
         const common = wikiWords.filter(w => nodeWords.includes(w)).length;
         const total = Math.max(nodeWords.length, wikiWords.length);
         if (common / total >= 0.5) return node.id;
+      }
+
+      // 4. Prefix match (first 3+ chars match, helpful for abbreviations/variations)
+      // Only try if no word overlap matched
+      if (nodeNorm.length >= 3 && wikiNorm.length >= 3) {
+        const minLen = Math.min(nodeNorm.length, wikiNorm.length);
+        if (nodeNorm.substring(0, minLen) === wikiNorm.substring(0, minLen)) return node.id;
       }
     }
   }
@@ -204,12 +218,12 @@ async function main() {
 
     process.stdout.write(`[${i + 1}/${nodes.length}] ${node.id.padEnd(30)} `);
 
-    // Try primary name first, then aliases
+    // Try primary name first, then aliases; delay before each attempt to respect rate limit
     let qid: string | null = null;
     for (const label of labels) {
+      await new Promise((r) => setTimeout(r, API_DELAY_MS));
       qid = await searchWikidataQID(label);
       if (qid) break;
-      await new Promise((r) => setTimeout(r, API_DELAY_MS));
     }
 
     if (qid) {
@@ -219,8 +233,6 @@ async function main() {
     } else {
       console.log("—");
     }
-
-    await new Promise((r) => setTimeout(r, API_DELAY_MS));
   }
 
   console.log(`\n✓ Found QIDs for ${found}/${nodes.length} nodes\n`);
@@ -255,7 +267,7 @@ async function main() {
         if (targetQid === qid) continue;
 
         // Fetch label of target and fuzzy-match against our nodes
-        const targetLabel = await getWikidataLabel(targetQid);
+        const { label: targetLabel, wasCached } = await getWikidataLabel(targetQid);
         if (!targetLabel) continue;
 
         const targetNodeId = fuzzyMatchLabel(targetLabel, nodeMetadata);
@@ -269,9 +281,12 @@ async function main() {
           provenance: `Wikidata:${qid} [${prop}] → ${targetQid}`,
         });
         extracted++;
-      }
 
-      await new Promise((r) => setTimeout(r, API_DELAY_MS / 2));
+        // Only delay after actual API calls, not cache hits
+        if (!wasCached) {
+          await new Promise((r) => setTimeout(r, API_DELAY_MS / 2));
+        }
+      }
     }
 
     console.log(`(+${extracted})`);
