@@ -9,14 +9,14 @@ import { fileURLToPath } from 'url';
  * Validates: known IDs, valid types, no self-loops, no duplicates
  */
 
-const VALID_TYPES = [
+const VALID_TYPES = new Set([
   'prerequisite',
   'descendant-of',
   'historical-influence',
   'substrate-of',
   'uses',
   'composes'
-];
+]);
 
 interface Edge {
   source: string;
@@ -53,8 +53,20 @@ interface ValidationReport {
 
 function loadNodeIds(nodeYamlPath: string): Set<string> {
   const content = fs.readFileSync(nodeYamlPath, 'utf-8');
-  const data = yaml.load(content) as { nodes: Array<{ id: string }> };
-  return new Set(data.nodes.map(node => node.id));
+  const data = yaml.load(content) as unknown;
+
+  if (!data || typeof data !== 'object' || !('nodes' in data)) {
+    throw new Error(`Invalid ai-nodes.yaml structure: missing 'nodes' field at ${nodeYamlPath}`);
+  }
+
+  const nodes = (data as { nodes: unknown }).nodes;
+  if (!Array.isArray(nodes)) {
+    throw new Error(`Invalid ai-nodes.yaml structure: 'nodes' must be an array at ${nodeYamlPath}`);
+  }
+
+  return new Set(nodes.filter((node): node is { id: string } =>
+    typeof node === 'object' && node !== null && 'id' in node && typeof node.id === 'string'
+  ).map(node => node.id));
 }
 
 function loadCandidates(
@@ -83,6 +95,7 @@ function validateEdges(
   const valid: Edge[] = [];
   const invalid: Array<{ edge: Edge; reason: string }> = [];
   const seenTriples = new Set<string>();
+  const edgesWithUnknownNodes = new Set<number>(); // Track which edges have unknown nodes
   const stats: ValidationStats = {
     total: edges.length,
     valid: 0,
@@ -93,7 +106,8 @@ function validateEdges(
     invalidTypes: 0
   };
 
-  for (const edge of edges) {
+  for (let edgeIndex = 0; edgeIndex < edges.length; edgeIndex++) {
+    const edge = edges[edgeIndex];
     let reasons: string[] = [];
     let isValid = true;
 
@@ -105,34 +119,36 @@ function validateEdges(
     }
 
     // Check for unknown node IDs
+    let hasUnknownNode = false;
     if (!nodeIds.has(edge.source)) {
       reasons.push(`unknown source: ${edge.source}`);
-      stats.unknownNodes++;
+      hasUnknownNode = true;
       isValid = false;
     }
     if (!nodeIds.has(edge.target)) {
       reasons.push(`unknown target: ${edge.target}`);
-      stats.unknownNodes++;
+      hasUnknownNode = true;
       isValid = false;
+    }
+    if (hasUnknownNode) {
+      edgesWithUnknownNodes.add(edgeIndex);
     }
 
     // Check for valid type
-    if (!VALID_TYPES.includes(edge.type)) {
+    if (!VALID_TYPES.has(edge.type)) {
       reasons.push(`invalid type: ${edge.type}`);
       stats.invalidTypes++;
       isValid = false;
     }
 
-    // Check for duplicates (only if other validations passed, to avoid double-counting)
-    if (isValid) {
-      const triple = `${edge.source}|${edge.target}|${edge.type}`;
-      if (seenTriples.has(triple)) {
-        reasons.push('duplicate (source, target, type)');
-        stats.duplicates++;
-        isValid = false;
-      } else {
-        seenTriples.add(triple);
-      }
+    // Check for duplicates (check all edges, not just valid ones)
+    const triple = `${edge.source}|${edge.target}|${edge.type}`;
+    if (seenTriples.has(triple)) {
+      reasons.push('duplicate (source, target, type)');
+      stats.duplicates++;
+      isValid = false;
+    } else {
+      seenTriples.add(triple);
     }
 
     if (isValid) {
@@ -143,6 +159,9 @@ function validateEdges(
       stats.invalid++;
     }
   }
+
+  // Count unique edges with unknown nodes (not per-field)
+  stats.unknownNodes = edgesWithUnknownNodes.size;
 
   return { valid, invalid, stats };
 }

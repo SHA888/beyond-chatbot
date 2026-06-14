@@ -32,14 +32,14 @@ interface ValidationResult {
   };
 }
 
-const VALID_TYPES = [
+const VALID_TYPES = new Set([
   'prerequisite',
   'descendant-of',
   'historical-influence',
   'substrate-of',
   'uses',
   'composes'
-];
+]);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.dirname(__dirname);
@@ -55,43 +55,46 @@ function validateEdges(edges: Edge[], nodeIds: Set<string>): ValidationResult {
   const valid: Edge[] = [];
   const invalid: Array<{ edge: Edge; reason: string }> = [];
   const seenTriples = new Set<string>();
-  const duplicates = new Set<string>();
-  const invalidEdges = {
-    selfLoops: 0,
-    unknownNodes: 0,
-    invalidTypes: 0
-  };
+  const duplicateTriples = new Set<string>();
+  const edgesWithUnknownNodes = new Set<number>();
+  let selfLoopsCount = 0;
+  let invalidTypesCount = 0;
 
-  for (const edge of edges) {
-    let reason = '';
+  for (let edgeIndex = 0; edgeIndex < edges.length; edgeIndex++) {
+    const edge = edges[edgeIndex];
+    let reasons: string[] = [];
     let isValid = true;
 
     // Check for self-loops
     if (edge.source === edge.target) {
-      reason = 'self-loop';
-      invalidEdges.selfLoops++;
+      reasons.push('self-loop');
+      selfLoopsCount++;
       isValid = false;
     }
 
     // Check for unknown node IDs
+    let hasUnknownNode = false;
     if (!nodeIds.has(edge.source) || !nodeIds.has(edge.target)) {
-      reason = `unknown node: ${!nodeIds.has(edge.source) ? edge.source : edge.target}`;
-      invalidEdges.unknownNodes++;
+      reasons.push(`unknown node: ${!nodeIds.has(edge.source) ? edge.source : edge.target}`);
+      hasUnknownNode = true;
       isValid = false;
+    }
+    if (hasUnknownNode) {
+      edgesWithUnknownNodes.add(edgeIndex);
     }
 
     // Check for valid type
-    if (!VALID_TYPES.includes(edge.type)) {
-      reason = `invalid type: ${edge.type}`;
-      invalidEdges.invalidTypes++;
+    if (!VALID_TYPES.has(edge.type)) {
+      reasons.push(`invalid type: ${edge.type}`);
+      invalidTypesCount++;
       isValid = false;
     }
 
-    // Check for duplicates
+    // Check for duplicates (check all edges, not just valid ones)
     const triple = `${edge.source}|${edge.target}|${edge.type}`;
     if (seenTriples.has(triple)) {
-      reason = 'duplicate (source, target, type)';
-      duplicates.add(triple);
+      reasons.push('duplicate (source, target, type)');
+      duplicateTriples.add(triple);
       isValid = false;
     } else {
       seenTriples.add(triple);
@@ -100,7 +103,7 @@ function validateEdges(edges: Edge[], nodeIds: Set<string>): ValidationResult {
     if (isValid) {
       valid.push(edge);
     } else {
-      invalid.push({ edge, reason });
+      invalid.push({ edge, reason: reasons.join('; ') });
     }
   }
 
@@ -111,10 +114,10 @@ function validateEdges(edges: Edge[], nodeIds: Set<string>): ValidationResult {
       total: edges.length,
       valid: valid.length,
       invalid: invalid.length,
-      duplicates: duplicates.size,
-      selfLoops: invalidEdges.selfLoops,
-      unknownNodes: invalidEdges.unknownNodes,
-      invalidTypes: invalidEdges.invalidTypes
+      duplicates: duplicateTriples.size,
+      selfLoops: selfLoopsCount,
+      unknownNodes: edgesWithUnknownNodes.size,
+      invalidTypes: invalidTypesCount
     }
   };
 }
