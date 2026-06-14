@@ -1,0 +1,33 @@
+{
+  "timestamp": "2026-06-14T13:08:15.166Z",
+  "summary": {
+    "total": 787,
+    "valid": 787,
+    "invalid": 0,
+    "duplicates": 0,
+    "selfLoops": 0,
+    "unknownNodes": 0,
+    "invalidTypes": 0
+  },
+  "sourceBreakdown": {
+    "seed": {
+      "total": 2,
+      "valid": 2,
+      "invalid": 0,
+      "duplicates": 0,
+      "selfLoops": 0,
+      "unknownNodes": 0,
+      "invalidTypes": 0
+    },
+    "llm": {
+      "total": 785,
+      "valid": 785,
+      "invalid": 0,
+      "duplicates": 0,
+      "selfLoops": 0,
+      "unknownNodes": 0,
+      "invalidTypes": 0
+    }
+  },
+  "issues": []
+}
